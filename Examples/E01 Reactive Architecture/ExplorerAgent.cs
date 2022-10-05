@@ -16,6 +16,7 @@
 using ActressMas;
 using System;
 using System.Collections.Generic;
+using System.Windows.Forms.VisualStyles;
 
 namespace Reactive
 {
@@ -32,6 +33,7 @@ namespace Reactive
         int loopNumber = 0;
         int sideNumber = 0;
         private static Random _rand = new Random();
+        public bool edgeUnknown = true;
 
         private enum State { Free, Carrying };
 
@@ -39,7 +41,7 @@ namespace Reactive
         {
             Console.WriteLine($"Starting explorer number {Name}");
             string explorerNumber = Name;
-            int alabala = Int32.Parse(explorerNumber);
+            int alabala = Int32.Parse(explorerNumber) - 1;
 
 
             _size = Environment.Memory["Size"];
@@ -53,7 +55,7 @@ namespace Reactive
                 _x = _rand.Next(_size);
                 _y = _rand.Next(_size);
             }
-            closest_edge = EdgeDetection();
+            closest_edge = EdgeDetection(alabala);
             Send("planet", $"position {_x} {_y}");
         }
 
@@ -101,6 +103,10 @@ namespace Reactive
                     MoveRandomly();
                     Send("planet", $"change {_x} {_y}");
                 }
+                else if (IsAtBase())
+                {
+                    Stop();
+                }
             }
             catch (Exception ex)
             {
@@ -116,41 +122,53 @@ namespace Reactive
         public void loopCounter()
         {
             sideNumber++;
-                if (sideNumber % 4 == 0)
+            if (sideNumber % 4 == 0)
             {
                 loopNumber++;
             }
 
         }
 
-        
-        public string EdgeDetection()
+
+        public string EdgeDetection(int alabala)
         {
+            if (edgeUnknown)
+            {
+
+                loopNumber = alabala;
+                edgeUnknown = false;
+            }
+
             string Edge = "";
 
             int res_lr = Math.Abs(_size) - Math.Abs(_x);
             int res_tb = Math.Abs(_y) - Math.Abs(_size);
 
-            if (!edge_complete) {
-            if (Math.Abs(res_tb) > (_size / 2))
-            {
-                Edge = Edge + "T";
-            }
-            else
-            {
-                Edge = Edge + "B";
+           
 
-            }
 
-            if (Math.Abs(res_lr) < (_size / 2))
-            {
-                Edge = Edge + "R";
-            }
-            else
-            {
-                Edge = Edge + "L";
 
-            }
+            if (!edge_complete)
+            {
+                if (Math.Abs(res_tb) > (_size / 2))
+                {
+                    Edge = Edge + "T";
+                }
+                else
+                {
+                    Edge = Edge + "B";
+
+                }
+
+                if (Math.Abs(res_lr) < (_size / 2))
+                {
+                    Edge = Edge + "R";
+                }
+                else
+                {
+                    Edge = Edge + "L";
+
+                }
             }
 
             if (_x == loopNumber && _y == loopNumber)
@@ -171,7 +189,7 @@ namespace Reactive
                 edge_complete = true;
 
             }
-            else if (_x == loopNumber && _y == _size - (loopNumber+1))
+            else if (_x == loopNumber && _y == _size - (loopNumber + 1))
             {
                 Console.WriteLine("Bot Left Reached!");
                 loopCounter();
@@ -195,7 +213,7 @@ namespace Reactive
 
         private void MoveRandomly2()
         {
-        int d = _rand.Next(4);
+            int d = _rand.Next(4);
             switch (d)
             {
                 case 0:
@@ -220,83 +238,111 @@ namespace Reactive
 
         private void MoveRandomly()
         {
-            EdgeDetection();
 
-                switch (closest_edge)
-                {
-                    case "TL": //00
-                        if (_x > 0 && _y > 0)
-                        {
-                            _x--;
-                            _y--; break;
-                        }
-                        else if (_x > 0) { _x--; break; }
-                        else if (_y > 0) { _y--; break; }
-                        else
-                        {
-                            break;
-                        }
-
-                    case "TR": //11 0
-
-                        if (_x < _size - 1 && _y > 0)
-                        {
-                            _x++;
-                            _y--; break;
-                        }
-                        else if (_x < _size - 1) { _x++; break; }
-                        else if (_y > 0) { _y--; break; }
-                        else
-                        {
-                            break;
-                        }
-
-                    case "BL": // 0 11
-                        if (_x > 0 && _y < _size - 1)
-                        {
-                            _x--;
-                            _y++; break;
-                        }
-                        else if (_x > 0) { _x--; break; }
-                        else if (_y < _size - 1) { _y++; break; }
-                        else
-                        {
-                            break;
-                        }
+          
+            EdgeDetection(10);
+            Console.WriteLine("LOOP NUMBER");
 
 
-                    case "BR": // 11 , 11
-                        if (_x < _size - 1 && _y < _size - 1)
-                        {
-                            _x++;
-                            _y++; break;
-                        }
-                        else if (_x < _size - 1) { _x++; break; }
-                        else if (_y < _size - 1) { _y++; break; }
-                        else
-                        {
-                            break;
-                        }
+            Console.WriteLine(loopNumber);
+
+            Console.WriteLine("CLOSEST EDGE");
+
+            Console.WriteLine(closest_edge);
+            switch (closest_edge)
+            {
+                //loopnumber = 0 for agent 1
+                //loopnumber = 1 for agent 2
+                case "TL": //00
+                    if (_x > loopNumber && _y > loopNumber)
+                    {
+                        _x--;
+                        _y--; break;
+                    }
+                    else if (_x > loopNumber) { _x--; break; }
+                    else if (_y > loopNumber) { _y--; break; }
+                    else
+                    {
+
+                        _x++;
+                        _y++;
+                        break;
+                    }
+
+                case "TR": //11 0
+                           //8  < 8 - 2 и 0 > 1
+                    if (_x < _size - (loopNumber + 1) && _y > loopNumber)
+                    {
+                        _x++;
+                        _y--; break;
+                    }
+                    // 8 < 8 - 2
+                    else if (_x < _size - (1 + loopNumber)) { _x++; break; }
+
+                    // 0 > 1
+                    else if (_y > loopNumber) { _y--; break; }
+
+
+
+
+                    else
+                    {
+                        _x--;
+                        _y++;
+                        break;
+                    }
+
+                case "BL": // 0 11
+                    if (_x > loopNumber && _y < _size - (1 + loopNumber))
+                    {
+                        _x--;
+                        _y++; break;
+                    }
+                    else if (_x > loopNumber) { _x--; break; }
+                    else if (_y < _size - (1 + loopNumber)) { _y++; break; }
+
+                    else
+                    {
+                        _y--;
+                        _x++;
+                        break;
+                    }
+
+
+                case "BR": // 11 , 11
+                    if (_x < _size - (1 + loopNumber) && _y < _size - (1 + loopNumber))
+                    {
+                        _x++;
+                        _y++; break;
+                    }
+                    else if (_x < _size - (1 + loopNumber)) { _x++; break; }
+                    else if (_y < _size - (1 + loopNumber)) { _y++; break; }
+                    else
+                    {
+                        _x--;
+                        _y--;
+                        break;
+                    }
 
                 case "TLR":
                     if (_x == _size - (loopNumber + 1))
                     {
                         closest_edge = "TRR";
                     }
-                        else { _x++; }
-                        
+                    else { _x++; }
+
 
                     break;
 
                 case "TRR":
-                    if  (_y == _size - (loopNumber + 1))
+                    if (_y == _size - (loopNumber + 1))
                     {
                         closest_edge = "BRR";
                     }
                     else { _y++; }
                     break;
-                
-                
+
+
                 case "BRR":
                     if (_x == loopNumber)
                     {
@@ -312,13 +358,17 @@ namespace Reactive
                     }
                     else { _y--; }
                     break;
+                case "C":
+                    Stop();
+
+                    break;
             }
-   
 
 
 
 
-            
+
+
 
 
 
