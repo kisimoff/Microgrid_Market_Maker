@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Net.Sockets;
 using System.Diagnostics;
-using System.Net;
+using System.Net.Sockets;
 
 namespace SocketServerLib.SocketHandler
 {
@@ -14,7 +13,7 @@ namespace SocketServerLib.SocketHandler
         /// Constructor
         /// </summary>
         /// <param name="socket">The system socket</param>
-        public TcpSocketAsync(Socket socket) 
+        public TcpSocketAsync(Socket socket)
             : base(socket)
         {
             this.socket = socket;

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SocketServerLib.SocketHandler;
+﻿using SocketServerLib.SocketHandler;
+using System;
 using System.Diagnostics;
 
 namespace SocketServerLib.Message
@@ -44,7 +41,7 @@ namespace SocketServerLib.Message
         protected abstract AbstractMessageHeader GetMessageHeaderInstance();
 
         #region Properties
-        
+
         /// <summary>
         /// The Client UID.
         /// </summary>

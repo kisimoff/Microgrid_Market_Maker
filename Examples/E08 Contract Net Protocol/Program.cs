@@ -26,12 +26,12 @@ namespace ContractNetProtocol
         {
             var env = new MyEnv(noTurns: 100);
 
-            int noPostmen = 3; 
-            int noLetters = 20; 
+            int noPostmen = 3;
+            int noLetters = 20;
 
             var locations = new List<Location>();
             var assignment = new int[noLetters];
-            var rand = new Random();                
+            var rand = new Random();
 
             for (int i = 0; i < noLetters; i++)
             {

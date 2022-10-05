@@ -1,14 +1,14 @@
-﻿using System;
+﻿using SocketServerLib.Message;
 using SocketServerLib.SocketHandler;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Sockets;
-using System.Threading;
-using System.Net;
-using System.Diagnostics;
-using System.Net.Security;
-using SocketServerLib.Message;
-using System.Security.Authentication;
 using SocketServerLib.Threads;
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 
 namespace SocketServerLib.Server
 {
@@ -113,7 +113,7 @@ namespace SocketServerLib.Server
             add { lock (raiseLock) { closeConnectionEvent += value; } }
             remove { lock (raiseLock) { closeConnectionEvent -= value; } }
         }
-        
+
         #endregion
 
         #region Methods for Init

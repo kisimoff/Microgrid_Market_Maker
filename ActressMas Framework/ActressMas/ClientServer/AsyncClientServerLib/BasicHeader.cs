@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SocketServerLib.Message;
+﻿using SocketServerLib.Message;
+using System;
 
 namespace AsyncClientServerLib.Message
 {
@@ -50,7 +47,7 @@ namespace AsyncClientServerLib.Message
                 return this.clientUID.ToString();
             }
         }
-                                                            // 38
+        // 38
         /// <summary>
         /// Default constructor
         /// </summary>
@@ -67,7 +64,7 @@ namespace AsyncClientServerLib.Message
         /// <param name="clientUID">The client UID</param>
         /// <param name="messageUID">The message UID</param>
         /// <param name="msg">The message</param>
-        public BasicHeader(Guid clientUID, Guid messageUID, byte[] msg) 
+        public BasicHeader(Guid clientUID, Guid messageUID, byte[] msg)
             : this()
         {
             this.messageUID = messageUID;

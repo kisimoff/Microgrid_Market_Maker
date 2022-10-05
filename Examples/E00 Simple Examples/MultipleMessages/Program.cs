@@ -7,8 +7,8 @@ namespace MultipleMessages
         private static void Main(string[] args)
         {
             int noWorkers = 1;
-            
-            var env = new EnvironmentMas(noTurns:20, parallel:true);
+
+            var env = new EnvironmentMas(noTurns: 20, parallel: true);
 
             ManagerAgent manager = new ManagerAgent();
             env.Add(manager, "Manager");

@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Diagnostics;
 
 namespace SocketServerLib.SocketHandler
 {
@@ -20,7 +20,7 @@ namespace SocketServerLib.SocketHandler
         /// </summary>
         /// <param name="socket">The system sockect</param>
         /// <param name="sslStream">The system ssl stream</param>
-        public SSLSocket(Socket socket, SslStream sslStream) 
+        public SSLSocket(Socket socket, SslStream sslStream)
             : base(socket)
         {
             Trace.WriteLine("Create SSLSocket over TcpSocket");

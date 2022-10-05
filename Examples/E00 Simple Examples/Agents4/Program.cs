@@ -39,9 +39,9 @@ namespace Agents4
         public override void ActDefault()
         {
             if (_turn > 3)
-                     Stop();
+                Stop();
 
-                for (int i = 1; i <= 3; i++)
+            for (int i = 1; i <= 3; i++)
                 Send("writer", $"Agent {Name} turn {_turn} index {i}");
 
             _turn++;

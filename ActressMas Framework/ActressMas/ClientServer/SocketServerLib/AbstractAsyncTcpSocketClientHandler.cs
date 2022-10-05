@@ -1,9 +1,8 @@
-﻿using System;
-using System.Threading;
-using System.Net.Sockets;
-using System.Net.Security;
+﻿using SocketServerLib.Message;
+using System;
 using System.Diagnostics;
-using SocketServerLib.Message;
+using System.Net.Security;
+using System.Net.Sockets;
 
 namespace SocketServerLib.SocketHandler
 {
@@ -169,8 +168,8 @@ namespace SocketServerLib.SocketHandler
                 handler.Close();
             }
         }
-        
+
         #endregion
-        
+
     }
 }

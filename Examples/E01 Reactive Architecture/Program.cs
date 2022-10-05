@@ -27,7 +27,7 @@ namespace Reactive
             var planetAgent = new PlanetAgent();
             env.Add(planetAgent, "planet");
 
-            for (int i = 1; i <= 2; i++) // 5 explorers
+            for (int i = 1; i <= 1; i++) // 5 explorers
             {
                 var explorerAgent = new ExplorerAgent();
                 env.Add(explorerAgent, $"explorer{i}");

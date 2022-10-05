@@ -1,5 +1,5 @@
-﻿using System;
-using SocketServerLib.SocketHandler;
+﻿using SocketServerLib.SocketHandler;
+using System;
 
 namespace SocketServerLib.Server
 {

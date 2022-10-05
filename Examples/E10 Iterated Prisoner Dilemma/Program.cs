@@ -42,8 +42,8 @@ namespace IteratedPrisonersDilemma
         {
             private int _noTurns;
 
-            public IPDEnvironment(int noTurns) 
-                : base(noTurns: noTurns * 2 + 2, randomOrder: false, parallel:false)
+            public IPDEnvironment(int noTurns)
+                : base(noTurns: noTurns * 2 + 2, randomOrder: false, parallel: false)
             {
                 _noTurns = noTurns * 2;
             }

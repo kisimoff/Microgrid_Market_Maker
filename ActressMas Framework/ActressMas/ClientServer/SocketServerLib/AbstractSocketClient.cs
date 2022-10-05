@@ -1,11 +1,11 @@
-﻿using System.Net;
-using System.Security.Cryptography.X509Certificates;
+﻿using SocketServerLib.Message;
+using SocketServerLib.SocketHandler;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
-using System.Diagnostics;
-using SocketServerLib.Message;
-using SocketServerLib.SocketHandler;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SocketServerLib.Client
 {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SocketServerLib.Client;
+﻿using SocketServerLib.Client;
 using SocketServerLib.SocketHandler;
 
 namespace AsyncClientServerLib.Client

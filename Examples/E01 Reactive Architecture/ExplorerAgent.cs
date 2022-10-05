@@ -15,7 +15,6 @@
 
 using ActressMas;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Reactive
@@ -28,8 +27,10 @@ namespace Reactive
         private int _size;
         List<int> historyX = new List<int>();
         List<int> historyY = new List<int>();
-
-
+        public bool edge_complete = false;
+        public string closest_edge;
+        int loopNumber = 1;
+        int sideNumber = 1;
 
         private static Random _rand = new Random();
 
@@ -50,7 +51,7 @@ namespace Reactive
                 _x = _rand.Next(_size);
                 _y = _rand.Next(_size);
             }
-
+            closest_edge = EdgeDetection();
             Send("planet", $"position {_x} {_y}");
         }
 
@@ -83,7 +84,7 @@ namespace Reactive
                     // R3. If carrying samples and not at the base, then travel up gradient
                     MoveToBase();
                     Send("planet", $"carry {_x} {_y}");
-                  
+
                 }
                 else if (action == "rock")
                 {
@@ -106,43 +107,285 @@ namespace Reactive
             }
         }
 
-        private void MoveRandomly()
+
+
+
+        public void loopCounter()
         {
-            a:
+
+
+
+            sideNumber++;
+                if (sideNumber % 4 == 0)
+            {
+                loopNumber++;
+                Console.WriteLine("LOOP NUMBER INCREASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE:");
+
+
+            }
+            Console.WriteLine("SIDE NUMBER:");
+
+            Console.WriteLine(sideNumber);
+
+            Console.WriteLine("LOOP NUMBER:");
+
+            Console.WriteLine(loopNumber);
+
+        }
+
+
+        public string EdgeDetection()
+        {
+            string Edge = "";
+
+            int res_lr = Math.Abs(_size) - Math.Abs(_x);
+            int res_tb = Math.Abs(_y) - Math.Abs(_size);
+
+            if (!edge_complete) {
+            if (Math.Abs(res_tb) > (_size / 2))
+            {
+                Console.WriteLine("Closer to the top");
+                Edge = Edge + "T";
+
+            }
+            else
+            {
+                Console.WriteLine("Closer to the bot");
+                Edge = Edge + "B";
+
+            }
+
+            if (Math.Abs(res_lr) < (_size / 2))
+            {
+                Console.WriteLine("Closer to the right");
+                Edge = Edge + "R";
+            }
+            else
+            {
+                Console.WriteLine("Closer to the left");
+                Edge = Edge + "L";
+
+            }
+            }
+
+            if (_x == loopNumber - 1 && _y == loopNumber - 1)
+            {
+                Console.WriteLine("Top Left Reached!");
+
+                loopCounter();
+
+                Edge = "TLR";
+                closest_edge = Edge;
+                edge_complete = true;
+            }
+
+            else if (_x == _size - loopNumber && _y == loopNumber - 1)
+            {
+                Console.WriteLine("Top Right Reached!");
+                loopCounter();
+
+                Edge = "TRR";
+                closest_edge = Edge;
+                edge_complete = true;
+
+            }
+            else if (_x == loopNumber -1 && _y == _size - loopNumber)
+            {
+                Console.WriteLine("Top Right Reached!");
+                loopCounter();
+
+
+
+                Edge = "BLR";
+                closest_edge = Edge;
+                edge_complete = true;
+
+            }
+            else if (_x == _size - loopNumber && _y == _size - loopNumber)
+            {
+                Console.WriteLine("Top Right Reached!");
+                loopCounter();
+
+
+                Edge = "BRR";
+                closest_edge = Edge;
+                edge_complete = true;
+
+            }
+
+            return Edge;
+
+        }
+
+        private void MoveRandomly2()
+        //0 - 7 = 7                <                  11 - 7 = 4
+
+        {
+
+
+        //size = 11
+
+        a:
             int d = _rand.Next(4);
             int validMove = 0;
             switch (d)
             {
-                case 0: if (_x > 0) _x--;
-                    validMove = CheckHistory(_x, _y);
-                    if (validMove == 0) { break; } 
-                    else 
-                    { 
-                        goto a;
-                    }
-                case 1: if (_x < _size - 1) _x++;
-                    validMove = CheckHistory(_x, _y);
-                    if (validMove == 0) { break; }
-                    else
-                    {
-                        goto a;
-                    }
-                case 2: if (_y > 0) _y--;
-                    validMove = CheckHistory(_x, _y);
-                    if (validMove == 0) { break; }
-                    else
-                    {
-                        goto a;
-                    }
-                case 3: if (_y < _size - 1) _y++;
-                    validMove = CheckHistory(_x, _y);
-                    if (validMove == 0) { break; }
-                    else
-                    {
-                        goto a;
-                    }
+                case 0:
+                    Console.WriteLine(_x);
+                    Console.WriteLine(_y);
+                    Console.WriteLine(d);
+
+                    if (_x > 0) _x--;
+                    { break; }
+
+                case 1:
+                    Console.WriteLine(_x);
+                    Console.WriteLine(_y);
+                    Console.WriteLine(d);
+
+                    if (_x < _size - 1) _x++;
+                    { break; }
+
+
+                case 2:
+                    Console.WriteLine(_x);
+                    Console.WriteLine(_y);
+                    Console.WriteLine(d);
+
+                    if (_y > 0) _y--;
+                    { break; }
+
+                case 3:
+                    Console.WriteLine(_x);
+                    Console.WriteLine(_y);
+                    Console.WriteLine(d);
+
+                    if (_y < _size - 1) _y++;
+                    { break; }
+
             }
         }
+
+
+
+        private void MoveRandomly()
+        {
+
+
+            Console.WriteLine(EdgeDetection());
+            Console.WriteLine(loopNumber);
+
+                switch (closest_edge)
+                {
+                    case "TL": //00
+
+                        if (_x > 0 && _y > 0)
+                        {
+                            _x--;
+                            _y--; break;
+                        }
+                        else if (_x > 0) { _x--; break; }
+                        else if (_y > 0) { _y--; break; }
+                        else
+                        {
+                            break;
+                        }
+
+                    case "TR": //11 0
+
+                        if (_x < _size - 1 && _y > 0)
+                        {
+                            _x++;
+                            _y--; break;
+                        }
+                        else if (_x < _size - 1) { _x++; break; }
+                        else if (_y > 0) { _y--; break; }
+                        else
+                        {
+                            break;
+                        }
+
+                    case "BL": // 0 11
+                        if (_x > 0 && _y < _size - 1)
+                        {
+                            _x--;
+                            _y++; break;
+                        }
+                        else if (_x > 0) { _x--; break; }
+                        else if (_y < _size - 1) { _y++; break; }
+                        else
+                        {
+                            break;
+                        }
+
+
+                    case "BR": // 11 , 11
+                        if (_x < _size - 1 && _y < _size - 1)
+                        {
+                            _x++;
+                            _y++; break;
+                        }
+                        else if (_x < _size - 1) { _x++; break; }
+                        else if (_y < _size - 1) { _y++; break; }
+                        else
+                        {
+                            break;
+                        }
+
+                case "TLR":
+                    if (_x == _size - loopNumber)
+                    {
+                        closest_edge = "TRR";
+                    }
+                        else { _x++; }
+                        
+
+                    break;
+
+                case "TRR":
+                    if  (_y == _size - loopNumber)
+                    {
+                        closest_edge = "BRR";
+                    }
+                    else { _y++; }
+                    break;
+                
+                
+                case "BRR":
+                    if (_x == loopNumber - 1)
+                    {
+                        closest_edge = "BLR";
+                    }
+                    else { _x--; }
+                    break;
+
+                case "BLR":
+                    if (_y == loopNumber - 1)
+                    {
+                        closest_edge = "TLR";
+                    }
+                    else { _y--; }
+                   
+                    break;
+            }
+   
+
+
+
+
+            
+
+
+
+
+        }
+
+
+
+
+
+
+
 
         private int CheckHistory(int x, int y)
         {
@@ -151,7 +394,7 @@ namespace Reactive
             if (historyX.Contains(MoveInt) == true)
             {
                 return 1;
-                    }
+            }
             else
             {
                 historyX.Add(MoveInt);

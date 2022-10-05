@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Net.Sockets;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
 
 namespace SocketServerLib.SocketHandler
 {
@@ -19,7 +19,7 @@ namespace SocketServerLib.SocketHandler
         /// Constructor
         /// </summary>
         /// <param name="socket">The system socket</param>
-        public TcpSocket(Socket socket) 
+        public TcpSocket(Socket socket)
         {
             this.socket = socket;
             Trace.WriteLine(string.Format("Create TcpSocket for EndPoint {0}", this.socket.RemoteEndPoint));

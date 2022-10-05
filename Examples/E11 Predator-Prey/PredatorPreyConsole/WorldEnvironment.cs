@@ -24,7 +24,7 @@ namespace PredatorPrey
     {
         private StreamWriter _sw;
 
-        public WorldEnvironment(int noTurns) 
+        public WorldEnvironment(int noTurns)
             : base(noTurns, parallel: false)
         {
             string worldStateFileName = "world-state.txt";

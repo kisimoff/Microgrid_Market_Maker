@@ -71,7 +71,7 @@ namespace ContractNetProtocol
                     sb.Append($"{i + 1}.{loc.Name} ");
                 }
                 sb.Append("-> ");
-                sb.Append($"{ _length} km");
+                sb.Append($"{_length} km");
                 return sb.ToString();
             }
         }

@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Threading;
 using System.Diagnostics;
+using System.Threading;
 
 namespace SocketServerLib.Threads
 {
@@ -109,7 +109,7 @@ namespace SocketServerLib.Threads
         #endregion
 
         #region IDisposable Members
-        
+
         /// <summary>
         /// Shutdown and dispose the thread.
         /// </summary>

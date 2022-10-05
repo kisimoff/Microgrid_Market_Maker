@@ -17,8 +17,8 @@ namespace SocketServerLib.SocketHandler
         /// </summary>
         /// <param name="message">The exception message</param>
         /// <param name="disconnectionRequired">Flag to indicate if a disconnection is required</param>
-        public TcpSocketException(string message, bool disconnectionRequired) 
-            :base(message)
+        public TcpSocketException(string message, bool disconnectionRequired)
+            : base(message)
         {
             this.disconnectionRequired = disconnectionRequired;
         }
@@ -27,8 +27,8 @@ namespace SocketServerLib.SocketHandler
         /// Constructor for an exception that not requied a disconnection.
         /// </summary>
         /// <param name="message">The exception message</param>
-        public TcpSocketException(string message) 
-            :this(message, false)
+        public TcpSocketException(string message)
+            : this(message, false)
         {
         }
 

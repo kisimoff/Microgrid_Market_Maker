@@ -203,7 +203,7 @@ namespace ActressMas
         /// when the decision to stop an agent does not belong to the agent itself, but to some other agent or to an external factor.
         /// </summary>
         /// <param name="agentName">The name of the agent to be removed</param>
-        public void Remove(string agentName) => 
+        public void Remove(string agentName) =>
             Remove(Agents[agentName]);
 
         /// <summary>

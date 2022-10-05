@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
-using System.Net.Security;
-using SocketServerLib.SocketHandler;
-using BasicClientServerLib.Message;
+﻿using BasicClientServerLib.Message;
 using SocketServerLib.Message;
+using SocketServerLib.SocketHandler;
+using System.Net.Security;
+using System.Net.Sockets;
 
 namespace BasicClientServerLib.SocketHandler
 {

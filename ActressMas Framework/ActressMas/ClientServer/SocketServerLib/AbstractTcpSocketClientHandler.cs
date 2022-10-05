@@ -1,10 +1,10 @@
-﻿using System;
-using System.Threading;
-using System.Net.Sockets;
-using System.Net.Security;
-using System.Diagnostics;
-using SocketServerLib.Message;
+﻿using SocketServerLib.Message;
+using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Net.Security;
+using System.Net.Sockets;
+using System.Threading;
 
 namespace SocketServerLib.SocketHandler
 {
@@ -17,7 +17,7 @@ namespace SocketServerLib.SocketHandler
     /// <param name="handler">The socket client handler where the message has been received</param>
     /// <param name="message">The received message</param>
     internal delegate void ReceiveMessageDelegate(AbstractTcpSocketClientHandler handler, AbstractMessage message);
-   
+
     /// <summary>
     /// Defines the delegate for a connection event
     /// </summary>
@@ -157,7 +157,7 @@ namespace SocketServerLib.SocketHandler
             remove { lock (raiseLock) { inReceivingEvent -= value; } }
         }
 
-        
+
         #endregion
 
         #region Properties
@@ -191,7 +191,7 @@ namespace SocketServerLib.SocketHandler
                 this.socket.SendTimeout = value;
             }
         }
-        
+
         #endregion
 
         #region Methods to raise events
@@ -363,7 +363,7 @@ namespace SocketServerLib.SocketHandler
                 handler.Close();
             }
         }
-        
+
         #endregion
 
         #region Synchronous send methods

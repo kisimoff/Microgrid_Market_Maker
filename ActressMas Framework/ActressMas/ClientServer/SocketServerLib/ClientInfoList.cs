@@ -1,7 +1,7 @@
-﻿using System;
+﻿using SocketServerLib.SocketHandler;
+using System;
 using System.Collections;
 using System.Diagnostics;
-using SocketServerLib.SocketHandler;
 
 namespace SocketServerLib.Server
 {
@@ -105,7 +105,7 @@ namespace SocketServerLib.Server
                     ClientInfo ret = null;
                     foreach (ClientInfo client in this.clientList.Values)
                     {
-                        if(client.ClientUID.Equals(clientUID))
+                        if (client.ClientUID.Equals(clientUID))
                         {
                             ret = client;
                             break;
@@ -141,7 +141,7 @@ namespace SocketServerLib.Server
         {
             lock (this)
             {
-                foreach(ClientInfo clientInfo in this.clientList.Values)
+                foreach (ClientInfo clientInfo in this.clientList.Values)
                 {
                     if (clientInfo.TcpSocketClientHandler != null)
                     {

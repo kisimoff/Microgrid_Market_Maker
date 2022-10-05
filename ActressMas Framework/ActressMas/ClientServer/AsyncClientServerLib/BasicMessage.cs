@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SocketServerLib.Message;
+﻿using SocketServerLib.Message;
+using System;
 
 namespace AsyncClientServerLib.Message
 {
@@ -14,7 +11,7 @@ namespace AsyncClientServerLib.Message
         /// <summary>
         /// Constructor
         /// </summary>
-        public BasicMessage() 
+        public BasicMessage()
             : base()
         {
         }

@@ -11,8 +11,8 @@ namespace SocketServerLib.Message
         /// Constructor.
         /// </summary>
         /// <param name="message">The message of the exception</param>
-        public MessageException(string message) 
-            :base(message)
+        public MessageException(string message)
+            : base(message)
         {
         }
     }
