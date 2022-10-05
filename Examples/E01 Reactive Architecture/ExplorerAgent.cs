@@ -29,16 +29,18 @@ namespace Reactive
         List<int> historyY = new List<int>();
         public bool edge_complete = false;
         public string closest_edge;
-        int loopNumber = 1;
-        int sideNumber = 1;
-
+        int loopNumber = 0;
+        int sideNumber = 0;
         private static Random _rand = new Random();
 
         private enum State { Free, Carrying };
 
         public override void Setup()
         {
-            Console.WriteLine($"Starting {Name}");
+            Console.WriteLine($"Starting explorer number {Name}");
+            string explorerNumber = Name;
+            int alabala = Int32.Parse(explorerNumber);
+
 
             _size = Environment.Memory["Size"];
 
@@ -110,30 +112,18 @@ namespace Reactive
 
 
 
+        //called once on every edge (conner). Every 4 times the loopnumber is increased, hence the agent dont reach the sides
         public void loopCounter()
         {
-
-
-
             sideNumber++;
                 if (sideNumber % 4 == 0)
             {
                 loopNumber++;
-                Console.WriteLine("LOOP NUMBER INCREASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE:");
-
-
             }
-            Console.WriteLine("SIDE NUMBER:");
-
-            Console.WriteLine(sideNumber);
-
-            Console.WriteLine("LOOP NUMBER:");
-
-            Console.WriteLine(loopNumber);
 
         }
 
-
+        
         public string EdgeDetection()
         {
             string Edge = "";
@@ -144,73 +134,59 @@ namespace Reactive
             if (!edge_complete) {
             if (Math.Abs(res_tb) > (_size / 2))
             {
-                Console.WriteLine("Closer to the top");
                 Edge = Edge + "T";
-
             }
             else
             {
-                Console.WriteLine("Closer to the bot");
                 Edge = Edge + "B";
 
             }
 
             if (Math.Abs(res_lr) < (_size / 2))
             {
-                Console.WriteLine("Closer to the right");
                 Edge = Edge + "R";
             }
             else
             {
-                Console.WriteLine("Closer to the left");
                 Edge = Edge + "L";
 
             }
             }
 
-            if (_x == loopNumber - 1 && _y == loopNumber - 1)
+            if (_x == loopNumber && _y == loopNumber)
             {
                 Console.WriteLine("Top Left Reached!");
-
                 loopCounter();
-
                 Edge = "TLR";
                 closest_edge = Edge;
                 edge_complete = true;
             }
 
-            else if (_x == _size - loopNumber && _y == loopNumber - 1)
+            else if (_x == _size - (loopNumber + 1) && _y == loopNumber)
             {
                 Console.WriteLine("Top Right Reached!");
                 loopCounter();
-
                 Edge = "TRR";
                 closest_edge = Edge;
                 edge_complete = true;
 
             }
-            else if (_x == loopNumber -1 && _y == _size - loopNumber)
+            else if (_x == loopNumber && _y == _size - (loopNumber+1))
             {
-                Console.WriteLine("Top Right Reached!");
+                Console.WriteLine("Bot Left Reached!");
                 loopCounter();
-
-
-
                 Edge = "BLR";
                 closest_edge = Edge;
                 edge_complete = true;
 
             }
-            else if (_x == _size - loopNumber && _y == _size - loopNumber)
+            else if (_x == _size - (loopNumber + 1) && _y == _size - (loopNumber + 1))
             {
-                Console.WriteLine("Top Right Reached!");
+                Console.WriteLine("Bot Right Reached!");
                 loopCounter();
-
-
                 Edge = "BRR";
                 closest_edge = Edge;
                 edge_complete = true;
-
             }
 
             return Edge;
@@ -218,67 +194,37 @@ namespace Reactive
         }
 
         private void MoveRandomly2()
-        //0 - 7 = 7                <                  11 - 7 = 4
-
         {
-
-
-        //size = 11
-
-        a:
-            int d = _rand.Next(4);
-            int validMove = 0;
+        int d = _rand.Next(4);
             switch (d)
             {
                 case 0:
-                    Console.WriteLine(_x);
-                    Console.WriteLine(_y);
-                    Console.WriteLine(d);
-
                     if (_x > 0) _x--;
                     { break; }
 
                 case 1:
-                    Console.WriteLine(_x);
-                    Console.WriteLine(_y);
-                    Console.WriteLine(d);
-
                     if (_x < _size - 1) _x++;
                     { break; }
 
 
                 case 2:
-                    Console.WriteLine(_x);
-                    Console.WriteLine(_y);
-                    Console.WriteLine(d);
-
                     if (_y > 0) _y--;
                     { break; }
 
                 case 3:
-                    Console.WriteLine(_x);
-                    Console.WriteLine(_y);
-                    Console.WriteLine(d);
-
                     if (_y < _size - 1) _y++;
                     { break; }
-
             }
         }
 
 
-
         private void MoveRandomly()
         {
-
-
-            Console.WriteLine(EdgeDetection());
-            Console.WriteLine(loopNumber);
+            EdgeDetection();
 
                 switch (closest_edge)
                 {
                     case "TL": //00
-
                         if (_x > 0 && _y > 0)
                         {
                             _x--;
@@ -333,7 +279,7 @@ namespace Reactive
                         }
 
                 case "TLR":
-                    if (_x == _size - loopNumber)
+                    if (_x == _size - (loopNumber + 1))
                     {
                         closest_edge = "TRR";
                     }
@@ -343,7 +289,7 @@ namespace Reactive
                     break;
 
                 case "TRR":
-                    if  (_y == _size - loopNumber)
+                    if  (_y == _size - (loopNumber + 1))
                     {
                         closest_edge = "BRR";
                     }
@@ -352,7 +298,7 @@ namespace Reactive
                 
                 
                 case "BRR":
-                    if (_x == loopNumber - 1)
+                    if (_x == loopNumber)
                     {
                         closest_edge = "BLR";
                     }
@@ -360,12 +306,11 @@ namespace Reactive
                     break;
 
                 case "BLR":
-                    if (_y == loopNumber - 1)
+                    if (_y == loopNumber)
                     {
                         closest_edge = "TLR";
                     }
                     else { _y--; }
-                   
                     break;
             }
    
