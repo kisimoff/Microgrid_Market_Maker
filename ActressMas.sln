@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.329
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ActressMas Framework", "ActressMas Framework", "{3878A67C-5481-490A-9DF3-1F5D37287F71}"
 EndProject
@@ -106,6 +106,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "E14 Voting", "E14 Voting", "{4452AE91-399A-41A5-85EB-4E3ADD829413}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Voting", "Examples\E14 Voting\Voting.csproj", "{8AE04CBA-6976-40EB-97B4-DDCB111B7B5B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Energy MAS", "Energy MAS", "{48315C3A-34D0-42F8-97E3-7201A5DBF322}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Energy MAS", "Energy MAS\Energy MAS.csproj", "{BC4E27CE-A89E-4AFD-88A3-D96A77F472B7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -245,6 +249,10 @@ Global
 		{8AE04CBA-6976-40EB-97B4-DDCB111B7B5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AE04CBA-6976-40EB-97B4-DDCB111B7B5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AE04CBA-6976-40EB-97B4-DDCB111B7B5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC4E27CE-A89E-4AFD-88A3-D96A77F472B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC4E27CE-A89E-4AFD-88A3-D96A77F472B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC4E27CE-A89E-4AFD-88A3-D96A77F472B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC4E27CE-A89E-4AFD-88A3-D96A77F472B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -300,6 +308,8 @@ Global
 		{0E66E1E0-D4CC-4CD0-B0AB-6CAF96124F88} = {351CE165-5290-4321-B0C0-0B042DEA864C}
 		{4452AE91-399A-41A5-85EB-4E3ADD829413} = {5D6F2011-990B-4B92-98BC-60FAE2492CD6}
 		{8AE04CBA-6976-40EB-97B4-DDCB111B7B5B} = {4452AE91-399A-41A5-85EB-4E3ADD829413}
+		{48315C3A-34D0-42F8-97E3-7201A5DBF322} = {5D6F2011-990B-4B92-98BC-60FAE2492CD6}
+		{BC4E27CE-A89E-4AFD-88A3-D96A77F472B7} = {48315C3A-34D0-42F8-97E3-7201A5DBF322}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F6FFA0D6-CD02-443F-9ED1-80D516CAC4DB}

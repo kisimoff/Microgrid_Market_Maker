@@ -1,8 +1,7 @@
 ﻿/**************************************************************************
  *                                                                        *
  *  Website:     https://github.com/florinleon/ActressMas                 *
- *  Description: Learning Real-Time A* (LRTA*) search algorithm using     *
- *               the ActressMas framework                                 *
+ *  Description: Vickrey auction using the ActressMas framework           *
  *  Copyright:   (c) 2018, Florin Leon                                    *
  *                                                                        *
  *  This program is free software; you can redistribute it and/or modify  *
@@ -15,25 +14,27 @@
  **************************************************************************/
 
 using ActressMas;
+using System;
 
-namespace LrtaStar
+namespace Energy_MAS
 {
     public class Program
     {
         private static void Main(string[] args)
         {
             var env = new EnvironmentMas();
-            var mapAgent = new MapAgent(); env.Add(mapAgent, "map");
-            var searchAgent = new SearchAgent(); env.Add(searchAgent, "agent1");
 
-           env.Memory.Add("MapName", "C:\\Windows\\Temp\\Pendulum");
-            //env.Memory.Add("MapName", "C:\\Windows\\Temp\\StrangeHeuristic");
-            env.Memory.Add("Delay", 100);
+            var rand = new Random();
 
+            for (int i = 1; i <= Settings.NoHouseholds; i++)
+            {
+                var householdAgent = new HouseholdAgent();
+                env.Add(householdAgent, $"Hosehould:{i:D2}");
+            }
+
+            var environmentAgent = new EnvironmentAgent();
+            env.Add(environmentAgent, "environment");
             env.Start();
-            System.Console.ReadLine();
-
-
         }
     }
 }

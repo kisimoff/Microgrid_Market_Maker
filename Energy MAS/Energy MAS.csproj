@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Energy_MAS</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="ActressMas">
+      <HintPath>..\ActressMas Framework\ActressMas\bin\Debug\ActressMas.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

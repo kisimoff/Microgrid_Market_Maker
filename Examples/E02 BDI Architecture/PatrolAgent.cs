@@ -93,7 +93,12 @@ namespace Bdi
         }
 
         private void BeliefRevision(List<string> parameters)
-        {
+         {
+
+            //0 = pos
+            //1 = <contents of cell to the left>  
+            //2 = <contents of occupied cell>
+            //3 = <contents of cell to the right>
             _beliefs["position"] = Convert.ToInt32(parameters[0]);
 
             int visualFieldSize = 3;
