@@ -17,7 +17,7 @@ namespace Energy_MAS
         private int MyDemand; // demand on a day for a household (in kWh)
         private int MyPriceBuyUT; // buy 1kWh from the utility company (in pence)
         private int MyPriceSellUT;
-        private bool Buyer;
+        private string? Status;
         private int Energy;
 
         public override void Setup()
@@ -34,7 +34,6 @@ namespace Energy_MAS
 
                 switch (action)
                 {
-           
                     case "inform": //activates when Setup: send start to env
                         HandleInfromation(parameters);
                         break;
@@ -49,26 +48,22 @@ namespace Energy_MAS
             }
         }
 
-
-   
-
         private void HandleInfromation(string parameters)
         {
-
             string[] infoSplit = parameters.Split(" ");
             MyDemand = Int32.Parse(infoSplit[0]);
             MyGeneraton = Int32.Parse(infoSplit[1]);
             MyPriceBuyUT = Int32.Parse(infoSplit[2]);
             MyPriceSellUT  = Int32.Parse(infoSplit[3]);
-            Console.WriteLine($"[{Name}] - Demand: {MyDemand}; Generation: {MyGeneraton}; Price to buy from UT: {MyPriceBuyUT}; Price to sell to UT: {MyPriceSellUT};");
-
             Energy = MyGeneraton - MyDemand;
-            if (Energy > 0) { Buyer = false; } else { Buyer = true; }
-            Console.WriteLine($"My energy balance is: {Energy} so im   " + ((Energy > 0) ? "Seller" : "Buyer"));
-            /* Fix if 0 to terminate */
-
+            if (Energy > 0) { Status = "selling"; } else if (Energy == 0) { Status = "sustainable"; } else { Status = "buying"; }
+            Console.WriteLine($"[{Name}] Energy Balance: {Energy}; Status: {Status}; \nInfo - Demand: {MyDemand}; Generation: {MyGeneraton}; Price to buy from UT: {MyPriceBuyUT}; Price to sell to UT: {MyPriceSellUT}; \n");
+            /*
+                1. Send(status and energy balance) if not sustainable
+                2. Implement Auction
+                3. Fist part done.
+             */
         }
-
 
     }
 
