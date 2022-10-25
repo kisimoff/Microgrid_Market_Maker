@@ -33,7 +33,7 @@ class EnvironmentAgent : Agent
                 int demand = rand.Next(MinDemand, MaxDemand); //the household's demand in kWh
                 int generation = rand.Next(MinGeneration, MaxGeneration); //the household's demand in kWh
                 int priceToBuyFromUtility = rand.Next(MinPriceToBuyFromUtility, MaxPriceToBuyFromUtility); //what the household's utility company
-                                                                        //charges to buy 1kWh from it
+                                                                      //charges to buy 1kWh from it
                 int priceToSellToUtility = rand.Next(MinPriceToSellToUtility, MaxPriceToSellToUtility);    //what the household's utility company
                                                                                                            //offers to buy 1kWh of renewable energy for
                 string content = $"inform {demand} {generation} {priceToBuyFromUtility} {priceToSellToUtility}";
