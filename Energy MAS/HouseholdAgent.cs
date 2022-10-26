@@ -17,10 +17,10 @@ namespace Energy_MAS
         List<string> messages = new List<string>();
         private bool step1 = false;
         private bool step2 = false;
-
         private int PriceDutch = 23;
         private int _turnsToWait;
-
+        private bool DutchWait = false;
+        List<string> buyers = new List<string>();
 
         public override void Setup()
         {
@@ -28,13 +28,12 @@ namespace Energy_MAS
             _turnsToWait = 2;
         }
 
-        public override void ActDefault()
+        public override void ActDefault() //step control, to initiate auction after everyone recived the first broadcast. 
         {
 
             if (!step1)
             {
                 if (--_turnsToWait <= 0)
-
                 {
                     AllMessagesRescived();
 
@@ -46,6 +45,15 @@ namespace Energy_MAS
                 if (--_turnsToWait <= 0)
                 {
                     Auction_Decider();
+                }
+            }
+            else if (DutchWait)
+            {
+                if (--_turnsToWait <= 0)
+                {
+                    Dutch_Auction();
+                    DutchWait = false;
+
                 }
             }
 
@@ -83,8 +91,30 @@ namespace Energy_MAS
 
                         if (Status == "buying")
                         {
+                            string[] offerSplit = parameters.Split(" ");
+                            int PriceToBuy = MyPriceBuyUT - 1;
+                            int OfferPrice = Int32.Parse(offerSplit[0]);
+                            int OfferEnergyAmount = Int32.Parse(offerSplit[1]);
+                            /*  if (OfferEnergyAmount > Energy)
+                              {
+                                  OfferEnergyAmount = OfferEnergyAmount - Energy;
+                              }*/
+                            if (PriceToBuy <= OfferPrice)
+                            {
+                                Send(message.Sender, $"buyingDutch {OfferPrice} {OfferEnergyAmount}");
+                            }
+
                             Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy.\n");
                         }
+                        break;
+
+                    case "buyingDutch":
+                        string[] buyingSplit = parameters.Split(" ");
+                        int buyingPrice = Int32.Parse(buyingSplit[0]);
+                        int buyingAmount = Int32.Parse(buyingSplit[1]);
+
+
+
                         break;
 
                     case "japanAuction":
@@ -98,8 +128,8 @@ namespace Energy_MAS
                         break;
 
                     case "offer":
-                        string[] offerSplit = parameters.Split(" ");
-                        Console.WriteLine($"Im {Status} and i recived an offer for buying at {offerSplit[0]} from {message.Sender}");
+                        //string[] offerSplit = parameters.Split(" ");
+                        //   Console.WriteLine($"Im {Status} and i recived an offer for buying at {offerSplit[0]} from {message.Sender}");
                         break;
                     default:
                         break;
@@ -112,7 +142,7 @@ namespace Energy_MAS
         }
 
 
-        private void HandleInfromation(string parameters)
+        private void HandleInfromation(string parameters) //split the parameters, calculate energy balance and broadcast its name status and energy
         {
             string[] infoSplit = parameters.Split(" ");
             MyDemand = Int32.Parse(infoSplit[0]);
@@ -131,7 +161,7 @@ namespace Energy_MAS
         }
 
 
-        private void HandleBoradcast(string parameters)
+        private void HandleBoradcast(string parameters) //add each message recived in a list and calculate overall energy
         {
             string[] broadcastSplit = parameters.Split(" ");
             messages.Add(parameters);
@@ -146,7 +176,7 @@ namespace Energy_MAS
 
 
 
-        private void AllMessagesRescived()
+        private void AllMessagesRescived() //when all messeges recived step1 is complete
         {
             step1 = true;
             Console.WriteLine($"1.-------------- [{Name}]: Messages recived:{messages.Count} OverallEnergy: {OverallEnergy + Energy}");
@@ -156,11 +186,11 @@ namespace Energy_MAS
 
 
 
-        private void Auction_Decider()
+        private void Auction_Decider() //two auctions - Dutch when (overall energy) is > 0 and Japaneese when (overall energy) is < 0
         {
             step2 = true;
 
-            List<string> buyers = Extract_Buyers(messages);
+            Extract_Buyers(messages);
 
             if ((OverallEnergy + Energy) > 0) // Dutch Auction
             {
@@ -169,7 +199,7 @@ namespace Energy_MAS
                 {
                     Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy. Im about to start Dutch Auction.\n");
                     //Thread.Sleep(1000);
-                    Dutch_Auction(buyers);
+                    Dutch_Auction();
 
                 }
             }
@@ -179,7 +209,7 @@ namespace Energy_MAS
                 if (Status == "selling")
                 {
                     Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy. Im about to start Japaneese  Auction.\n");
-                    Japaneese_Auction(buyers);
+                    Japaneese_Auction();
 
                 }
             }
@@ -191,17 +221,18 @@ namespace Energy_MAS
             }
 
         }
-        private void Dutch_Auction(List<String> buyers)  //Too much energy
+        private void Dutch_Auction()  // When (overall energy) is > 0
         /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
 moment, any bidder can claim the item.*/
         {
-
-            SendToMany(buyers, "dutchAuction");
-
+            SendToMany(buyers, $"dutchAuction {PriceDutch} {Energy}");
+            _turnsToWait = messages.Count;
+            DutchWait = true;
+            PriceDutch--;
         }
 
-        private void Japaneese_Auction(List<String> buyers) //Too little energy
-        /* In a Japanese auction, the initial price is zero; the price is then gradually increased.Abidder
+        private void Japaneese_Auction() // When(overall energy) is < 0
+        /* In a Japanese auction, the initial price is zero; the price is then gradually increased.A bidder
 can leave the room when the price becomes too high for her.Once there is only one bidder remaining,
 that bidder wins the item, and pays the price at which the last other bidder left the room.*/
         {
@@ -209,9 +240,9 @@ that bidder wins the item, and pays the price at which the last other bidder lef
 
         }
 
-        private List<String> Extract_Buyers(List<String> messages)
+        private void Extract_Buyers(List<String> messages) //for each message, get the buyer's name and strip "[" and  "]"
         {
-            List<string> players = new List<string>();
+            // List<string> players = new List<string>();
 
             foreach (string household in messages)
             {
@@ -220,13 +251,10 @@ that bidder wins the item, and pays the price at which the last other bidder lef
                 {
                     string housholdStripped = householdSplit[0].Replace("[", "").Replace("]", "");
 
-                    players.Add(housholdStripped);
-                    // Broadcast("Hi There");
-                    //PriceDutch--; 
-                    //  Console.WriteLine($"He is a buyer: {housholdStripped}");
+                    buyers.Add(housholdStripped);
+
                 }
             }
-            return players;
         }
 
 
