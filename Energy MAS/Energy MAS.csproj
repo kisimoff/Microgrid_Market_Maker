@@ -9,8 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ActressMas Framework\ActressMas\ActressMas.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="ActressMas">
-      <HintPath>..\ActressMas Framework\ActressMas\bin\Debug\ActressMas.dll</HintPath>
+      <HintPath>..\..\ActressMas-master\ActressMas-master\ActressMAS v3.0\ActressMas Dll\ActressMas.dll</HintPath>
     </Reference>
   </ItemGroup>
 

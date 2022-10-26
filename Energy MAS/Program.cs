@@ -14,7 +14,6 @@
  **************************************************************************/
 
 using ActressMas;
-using System;
 
 namespace Energy_MAS
 {
@@ -29,7 +28,7 @@ namespace Energy_MAS
             for (int i = 1; i <= Settings.NoHouseholds; i++)
             {
                 var householdAgent = new HouseholdAgent();
-                env.Add(householdAgent, $"Hosehould:{i:D2}");
+                env.Add(householdAgent, $"Household:{i:D2}");
             }
 
             var environmentAgent = new EnvironmentAgent();

@@ -93,7 +93,7 @@ namespace Bdi
         }
 
         private void BeliefRevision(List<string> parameters)
-         {
+        {
 
             //0 = pos
             //1 = <contents of cell to the left>  

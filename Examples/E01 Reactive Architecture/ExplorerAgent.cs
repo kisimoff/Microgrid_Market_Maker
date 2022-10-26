@@ -16,7 +16,6 @@
 using ActressMas;
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms.VisualStyles;
 
 namespace Reactive
 {
@@ -144,7 +143,7 @@ namespace Reactive
             int res_lr = Math.Abs(_size) - Math.Abs(_x);
             int res_tb = Math.Abs(_y) - Math.Abs(_size);
 
-           
+
 
 
 
@@ -239,7 +238,7 @@ namespace Reactive
         private void MoveRandomly()
         {
 
-          
+
             EdgeDetection(10);
             Console.WriteLine("LOOP NUMBER");
 

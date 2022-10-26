@@ -26,7 +26,7 @@ namespace LrtaStar
             var mapAgent = new MapAgent(); env.Add(mapAgent, "map");
             var searchAgent = new SearchAgent(); env.Add(searchAgent, "agent1");
 
-           env.Memory.Add("MapName", "C:\\Windows\\Temp\\Pendulum");
+            env.Memory.Add("MapName", "C:\\Windows\\Temp\\Pendulum");
             //env.Memory.Add("MapName", "C:\\Windows\\Temp\\StrangeHeuristic");
             env.Memory.Add("Delay", 100);
 
