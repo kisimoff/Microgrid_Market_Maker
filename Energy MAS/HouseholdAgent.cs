@@ -21,7 +21,10 @@ namespace Energy_MAS
         private int _turnsToWait;
         private bool DutchWait = false;
         List<string> buyers = new List<string>();
-
+        private int myMoneyEarned;
+        private int myMoneySpent;
+        private int AmountToBuy = 0;
+        private bool stopBuying = false;
         public override void Setup()
         {
             Send("environment", "start");
@@ -51,8 +54,8 @@ namespace Energy_MAS
             {
                 if (--_turnsToWait <= 0)
                 {
-                    Dutch_Auction();
                     DutchWait = false;
+                    Dutch_Auction_Announce();
 
                 }
             }
@@ -86,8 +89,11 @@ namespace Energy_MAS
                         HandleBoradcast(parameters);
                         break;
 
-                    case "dutchAuction":
-                        Console.WriteLine("Dutch Auction Activated");
+                    case "dutchAuctionOffer":
+                        //overbuying have to check energy before accepting
+
+
+                        // Console.WriteLine($"[{Name}] Dutch Auction Offer Recived");
 
                         if (Status == "buying")
                         {
@@ -95,27 +101,100 @@ namespace Energy_MAS
                             int PriceToBuy = MyPriceBuyUT - 1;
                             int OfferPrice = Int32.Parse(offerSplit[0]);
                             int OfferEnergyAmount = Int32.Parse(offerSplit[1]);
+
+                            if (PriceToBuy >= OfferPrice && !stopBuying)
+                            {
+
+
+                                if ((Energy) + AmountToBuy + OfferEnergyAmount < 0)
+                                {
+                                    Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {OfferEnergyAmount}");
+                                    AmountToBuy = AmountToBuy + OfferEnergyAmount;
+
+                                }
+
+                                else if ((Energy) + AmountToBuy + OfferEnergyAmount > 0)
+                                {
+                                    if (AmountToBuy == 0)
+                                    {
+                                        Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {Math.Abs(Energy)}");
+                                        AmountToBuy = AmountToBuy + Math.Abs(Energy);
+                                    }
+                                    else if (AmountToBuy > 0)
+                                    {               //-5 + 2
+                                        int toBuy = (Energy) + AmountToBuy;
+                                        if (toBuy < 0)
+                                        {
+                                            Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {Math.Abs(toBuy)}");
+                                            AmountToBuy = AmountToBuy + Math.Abs(toBuy);
+
+                                        }
+                                    }
+
+                                }
+                                else if ((Energy) + AmountToBuy + OfferEnergyAmount == 0)
+                                {  //in that case after transanction is complete, energy would be 0
+                                    // so we stop future transactions
+                                    stopBuying = true;
+                                }
+
+                                // Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {AmountToBuy}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[{Name}] Price Too High. My Price to buy is: {PriceToBuy}");
+
+                                break;
+                            }
+
+
+
+
                             /*  if (OfferEnergyAmount > Energy)
                               {
                                   OfferEnergyAmount = OfferEnergyAmount - Energy;
                               }*/
-                            if (PriceToBuy <= OfferPrice)
-                            {
-                                Send(message.Sender, $"buyingDutch {OfferPrice} {OfferEnergyAmount}");
-                            }
 
-                            Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy.\n");
+
+                            //Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy.\n");
                         }
                         break;
 
-                    case "buyingDutch":
+                    case "dutchAuctionOfferAccept":
                         string[] buyingSplit = parameters.Split(" ");
+
+
                         int buyingPrice = Int32.Parse(buyingSplit[0]);
                         int buyingAmount = Int32.Parse(buyingSplit[1]);
-
-
-
+                        Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; He is buying {buyingAmount} for {buyingPrice}. Total = {buyingPrice * buyingAmount}");
+                        myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                        Energy = Energy - buyingAmount;
+                        Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
+                        Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {Energy} and i've earned {myMoneyEarned}");
+                        if (Energy == 0)
+                        {
+                            Console.WriteLine($"[{Name}] My part is done! My energy balance is {Energy} and i've Earned {myMoneyEarned}");
+                            Stop();
+                        }
                         break;
+
+
+                    case "sendEnergy":
+                        string[] sendEnergySplit = parameters.Split(" ");
+                        int sendEnergyBuyingAmount = Int32.Parse(sendEnergySplit[0]);
+                        int sendEnergyTotalPrice = Int32.Parse(sendEnergySplit[1]);
+                        Energy = (Energy) + sendEnergyBuyingAmount;
+                        myMoneySpent = myMoneySpent + sendEnergyTotalPrice;
+                        Console.WriteLine($"[{Name}] I've just bought  from {message.Sender} This amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. Now my energy balance is: {Energy} and i've spend {myMoneySpent}");
+                        if (Energy == 0)
+                        {
+                            Console.WriteLine($"[{Name}] My part is done! My energy balance is {Energy} and i've spent {myMoneySpent}");
+                            Stop();
+
+                        }
+                        break;
+
+
 
                     case "japanAuction":
                         Console.WriteLine("Japaneese Auction Activated");
@@ -199,7 +278,7 @@ namespace Energy_MAS
                 {
                     Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy. Im about to start Dutch Auction.\n");
                     //Thread.Sleep(1000);
-                    Dutch_Auction();
+                    Dutch_Auction_Announce();
 
                 }
             }
@@ -209,7 +288,7 @@ namespace Energy_MAS
                 if (Status == "selling")
                 {
                     Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy. Im about to start Japaneese  Auction.\n");
-                    Japaneese_Auction();
+                    Japaneese_Auction_Announce();
 
                 }
             }
@@ -221,17 +300,17 @@ namespace Energy_MAS
             }
 
         }
-        private void Dutch_Auction()  // When (overall energy) is > 0
+        private void Dutch_Auction_Announce()  // When (overall energy) is > 0
         /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
 moment, any bidder can claim the item.*/
         {
-            SendToMany(buyers, $"dutchAuction {PriceDutch} {Energy}");
+            SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {Energy}");
             _turnsToWait = messages.Count;
             DutchWait = true;
             PriceDutch--;
         }
 
-        private void Japaneese_Auction() // When(overall energy) is < 0
+        private void Japaneese_Auction_Announce() // When(overall energy) is < 0
         /* In a Japanese auction, the initial price is zero; the price is then gradually increased.A bidder
 can leave the room when the price becomes too high for her.Once there is only one bidder remaining,
 that bidder wins the item, and pays the price at which the last other bidder left the room.*/
