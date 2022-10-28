@@ -3,7 +3,7 @@
 
     public class Settings
     {
-        public static int NoHouseholds = 5;
+        public static int NoHouseholds = 15;
     }
 
 
