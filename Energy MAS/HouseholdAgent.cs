@@ -74,7 +74,7 @@ namespace Energy_MAS
 
         public override void Act(Message message)
         {
-
+            //Thread.Sleep(100);
             try
             {
                 if (Status == "sustainable")
@@ -110,21 +110,42 @@ namespace Energy_MAS
 
                         break;
                     case "noBuyersLeft":
-                        if (Energy != 0)
+                        if (Energy < 0)
                         {
-                            while (0 < Energy)
-                            {
-                                myMoneyEarned = myMoneyEarned + MyPriceSellUT;
-                                Energy--;
-                            }
-                            Console.WriteLine($"Sold it to UC! {Name} Im {Status} and my energy now is: {Energy}. Money: {myMoneyEarned}");
+                            Console.WriteLine($"ERRRR! \t {Name} Energy: {Energy} Im {Status} ");
+                        }
+
+
+                        if (Energy > 0)
+                        {
+                            /*       while (Energy > 0)
+                                   {
+                                                                   Console.WriteLine($" \t \t {Name} Im {Status} and my energy now is: {Energy}. Money: {myMoneyEarned}");
+
+                                       myMoneyEarned = myMoneyEarned + MyPriceSellUT;
+                                       Energy--;
+                                   }
+                                   Console.WriteLine($" \t \t {Name} Im {Status} and my energy now is: {Energy}. Money: {myMoneyEarned}");
+
+
+
+
+       */
+
+
+
+                            Console.WriteLine($" \t \t {Name} No buyers left and i have {Energy} exxess energy. I gotta sell for {MyPriceSellUT}");
+                            myMoneyEarned = myMoneyEarned + (MyPriceSellUT * Energy);
+                            Energy = 0;
+
+                            Console.WriteLine($" \t \t {Name} Sold to UC, Money: {myMoneyEarned}");
+
+
+
+
 
                         }
-                        else
-                        {
-                            Console.WriteLine($"{Energy}. Is it 0? Shoould be. Ah yea, im a {Status} and my name is {Name}. ");
 
-                        }
 
                         break;
                     case "dutchAuctionOffer":
@@ -134,13 +155,14 @@ namespace Energy_MAS
                             if (Energy == 0)
                             {
                                 Send(message.Sender, "imOut");
+                                break;
                             }
                             string[] offerSplit = parameters.Split(" ");
                             int PriceToBuy = MyPriceBuyUT - 1;
                             int OfferPrice = Int32.Parse(offerSplit[0]);
                             int OfferEnergyAmount = Int32.Parse(offerSplit[1]);
 
-                            if (PriceToBuy <= OfferPrice)
+                            if (PriceToBuy >= OfferPrice)
                             {
 
 
@@ -160,6 +182,8 @@ namespace Energy_MAS
                                     }
                                     else if (AmountToBuy > 0)
                                     {               //-5 + 2
+                                        Console.WriteLine($"!!!!!!!!!!!!! [{Name}]  My Energy is: {Energy} My Amount to buy is: {AmountToBuy} ");
+
                                         int toBuy = (Energy) + AmountToBuy;
                                         if (toBuy < 0)
                                         {
@@ -208,18 +232,46 @@ namespace Energy_MAS
                         string[] buyingSplit = parameters.Split(" ");
                         int buyingPrice = Int32.Parse(buyingSplit[0]);
                         int buyingAmount = Int32.Parse(buyingSplit[1]);
-                        Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; He is buying {buyingAmount} for {buyingPrice}. Total = {buyingPrice * buyingAmount}");
-                        if (Energy <= 0)
+
+                        if (Energy < 0)
                         {
-                            Console.WriteLine($"[{Name}] My energy is {Energy} Im refusing the offer to {message.Sender}");
+                            Console.WriteLine($"ERRRRR:[{Name}] My energy is below zero - {Energy}");
                             Send(message.Sender, "refuseOffer");
                             break;
-                        }
 
-                        myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
-                        Energy = Energy - buyingAmount;
-                        Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
-                        Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {Energy} and i've earned {myMoneyEarned}");
+                        }
+                        if (Energy == 0)
+                        {
+                            Console.WriteLine($"\t \t [{Name}] My part is done! My energy balance is {Energy} and i've Earned {myMoneyEarned}");
+
+                            Send(message.Sender, "refuseOffer");
+                            break;
+
+
+                        }
+                        //10      13   
+                        if (Energy > 0)
+                        {
+                            if (Energy < buyingAmount)
+                            {
+                                buyingAmount = Energy;
+                                Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; Sending less, as i dont have enought: {buyingAmount} My energy is {Energy}");
+                                myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                                Energy = Energy - buyingAmount;
+                                Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
+                                Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {Energy} and i've earned {myMoneyEarned}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; He wants to buy {buyingAmount} for {buyingPrice}. Total = {buyingPrice * buyingAmount}");
+                                myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                                Energy = Energy - buyingAmount;
+                                Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
+                                Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {Energy} and i've earned {myMoneyEarned}");
+                            }
+
+
+                        }
                         if (Energy == 0)
                         {
                             Console.WriteLine($"[{Name}] My part is done! My energy balance is {Energy} and i've Earned {myMoneyEarned}");
@@ -229,12 +281,18 @@ namespace Energy_MAS
 
 
                     case "sendEnergy":
+                        if (Energy == 0)
+                        {
+
+                            break;
+                        }
+
                         string[] sendEnergySplit = parameters.Split(" ");
                         int sendEnergyBuyingAmount = Int32.Parse(sendEnergySplit[0]);
                         int sendEnergyTotalPrice = Int32.Parse(sendEnergySplit[1]);
                         Energy = (Energy) + sendEnergyBuyingAmount;
                         myMoneySpent = myMoneySpent + sendEnergyTotalPrice;
-                        Console.WriteLine($"[{Name}] I've just bought  from {message.Sender} This amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. Now my energy balance is: {Energy} and i've spend {myMoneySpent}");
+                        Console.WriteLine($"\t \t [{Name}] I've just bought  from {message.Sender} This amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. Now my energy balance is: {Energy} and i've spend {myMoneySpent}");
                         if (Energy == 0)
                         {
                             Console.WriteLine($"[{Name}] My part is done! My energy balance is {Energy} and i've spent {myMoneySpent}");
@@ -243,6 +301,7 @@ namespace Energy_MAS
                             // Stop();
 
                         }
+                        AmountToBuy = 0;
                         break;
 
 
@@ -356,6 +415,8 @@ moment, any bidder can claim the item.*/
                 _turnsToWait = messages.Count;
                 DutchWait = true;
                 PriceDutch--;
+
+
             }
         }
 
