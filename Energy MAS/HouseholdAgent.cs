@@ -7,26 +7,15 @@ namespace Energy_MAS
 {
     public class HouseholdAgent : Agent
     {
-        private int MyGeneraton;//generation from renewable energy on a day for a household (in kWh)
-        private int MyDemand; // demand on a day for a household (in kWh)
-        private int MyPriceBuyUT; // buy 1kWh from the utility company (in pence)
-        private int MyPriceSellUT;
-        private string? Status;
-        private int Energy;
-        private int OverallEnergy;
-        List<string> messages = new List<string>();
-        private bool step1 = false;
-        private bool step2 = false;
-        private int PriceDutch = 23;
-        private int _turnsToWait;
-        private bool DutchWait = false;
-        List<string> buyers = new List<string>();
-        private int myMoneyEarned;
-        private int myMoneySpent;
-        private int AmountToBuy = 0;
-        private bool stopBuying = false;
-        private bool finished = false;
-        public override void Setup()
+        private int myGeneration, myDemand, myPriceBuyUT, myPriceSellUT, myEnergy, myMoneyEarned, myMoneySpent, OverallEnergy, _turnsToWait;
+        private bool step1, step2, DutchWait = false; //flow control bools
+        private string? Status; // sustainable, buying, selling. Declared after initiation phase
+        private int PriceDutch = 23; //(= Max price to Buy from UT) starting price for Dutch Auction 
+        private int myPendingEnergy = 0; //updates on accepted offer (pending energy to be recived), used to make descisions of future offers
+        List<string> messages = new List<string>(); //gets all the messages, recives one meassage from each participant with his information
+        List<string> buyers = new List<string>(); //filters the buyers from messages list
+
+        public override void Setup() // initialisation phase
         {
             Send("environment", "start");
             _turnsToWait = 2;
@@ -40,8 +29,6 @@ namespace Energy_MAS
                 if (--_turnsToWait <= 0)
                 {
                     AllMessagesRescived();
-
-                    //Dutch_Auction();
                 }
             }
             else if (!step2)
@@ -59,251 +46,88 @@ namespace Energy_MAS
                     Dutch_Auction_Announce();
                 }
             }
-            /*else if (finished)
-            {
-                if (--_turnsToWait <= 0)
-                {
-                    Broadcast_online();
-                    finished = false;
-                }
-            }*/
-
-
 
         }
 
         public override void Act(Message message)
         {
-            //Thread.Sleep(100);
+            //Thread.Sleep(100); //used for debugging
             try
             {
-                if (Status == "sustainable")
-                {
-                    //  break;
-                }
-
                 Console.WriteLine($"\t{message.Format()}");
                 message.Parse(out string action, out string parameters);
 
                 switch (action)
                 {
-                    case "inform": //activates when Setup: send start to env
+                    case "inform": //on recived message with "info" tag from EnvironmentAgent
                         HandleInfromation(parameters);
                         break;
 
 
                     case "broadcast":
-                        if (Status == "sustainable")
+                        if (Status != "sustainable")
                         {
-                            break;
+                            HandleBoradcast(parameters);
                         }
-                        HandleBoradcast(parameters);
                         break;
 
-                    case "imOut":
+                    case "dutchAuctionOffer": //recived by Buyer
+                        // sent by Seller when they have exess energy to sell
+                        if (Status == "buying")
+                        {
+                            HandleDuchAuctionOffer(parameters, message);
+                        }
+                        break;
 
+
+                    case "dutchAuctionOfferAccept": // recived by Seller
+                        // sent by Seller when they are happy with the price
+                        HandleDutchAuctionOfferAccept(parameters, message);
+                        break;
+
+                    case "refuseOffer": //recived by Buyer
+                        // sent by Seller when he can no lognger sell, as his energy would be below 0
+                        //      Console.WriteLine($"[{Name}] My energy is {myEnergy} Offer refused from: {message.Sender}");
+                        myPendingEnergy = 0;
+                        break;
+
+                    case "sendEnergy": // recived by Buyer
+                        // sent by Seller when a buyer accepts an offer
+                        if (myEnergy == 0)
+                        {
+                            Send(message.Sender, "imOut");
+                            break;
+                        }
+                        else
+                        {
+                            string[] sendEnergySplit = parameters.Split(" ");
+                            int sendEnergyBuyingAmount = Int32.Parse(sendEnergySplit[0]);
+                            int sendEnergyTotalPrice = Int32.Parse(sendEnergySplit[1]);
+                            myEnergy = (myEnergy) + sendEnergyBuyingAmount;
+                            myMoneySpent = myMoneySpent + sendEnergyTotalPrice;
+                        }
+                        //  Console.WriteLine($"\t \t [{Name}] I've just bought  from {message.Sender} This amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. Now my energy balance is: {myEnergy} and i've spend {myMoneySpent}");
+                        myPendingEnergy = 0;
+                        break;
+
+                    case "imOut": //recived by Seller,
+                        //send by Buyer when the Buyer Energy = 0;
                         buyers.Remove(message.Sender);
-                        if (buyers.Count == 0)
+                        if (buyers.Count == 0) //if no buyers tell everyone
                         {
                             Broadcast("noBuyersLeft");
                         }
-
                         break;
-                    case "noBuyersLeft":
-                        if (Energy < 0)
+
+                    case "noBuyersLeft": //recived by anyone
+                        //sell all exess energy to UC, in duch auction only sellers do it
+                        if (myEnergy > 0)
                         {
-                            Console.WriteLine($"ERRRR! \t {Name} Energy: {Energy} Im {Status} ");
-                        }
-
-
-                        if (Energy > 0)
-                        {
-                            /*       while (Energy > 0)
-                                   {
-                                                                   Console.WriteLine($" \t \t {Name} Im {Status} and my energy now is: {Energy}. Money: {myMoneyEarned}");
-
-                                       myMoneyEarned = myMoneyEarned + MyPriceSellUT;
-                                       Energy--;
-                                   }
-                                   Console.WriteLine($" \t \t {Name} Im {Status} and my energy now is: {Energy}. Money: {myMoneyEarned}");
-
-
-
-
-       */
-
-
-
-                            Console.WriteLine($" \t \t {Name} No buyers left and i have {Energy} exxess energy. I gotta sell for {MyPriceSellUT}");
-                            myMoneyEarned = myMoneyEarned + (MyPriceSellUT * Energy);
-                            Energy = 0;
-
+                            myMoneyEarned = myMoneyEarned + (myPriceSellUT * myEnergy);
+                            myEnergy = 0;
                             Console.WriteLine($" \t \t {Name} Sold to UC, Money: {myMoneyEarned}");
-
-
-
-
-
-                        }
-
-
-                        break;
-                    case "dutchAuctionOffer":
-
-                        if (Status == "buying")
-                        {
-                            if (Energy == 0)
-                            {
-                                Send(message.Sender, "imOut");
-                                break;
-                            }
-                            string[] offerSplit = parameters.Split(" ");
-                            int PriceToBuy = MyPriceBuyUT - 1;
-                            int OfferPrice = Int32.Parse(offerSplit[0]);
-                            int OfferEnergyAmount = Int32.Parse(offerSplit[1]);
-
-                            if (PriceToBuy >= OfferPrice)
-                            {
-
-
-                                if ((Energy) + AmountToBuy + OfferEnergyAmount < 0)
-                                {
-                                    Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {OfferEnergyAmount}");
-                                    AmountToBuy = AmountToBuy + OfferEnergyAmount;
-
-                                }
-
-                                else if ((Energy) + AmountToBuy + OfferEnergyAmount > 0)
-                                {
-                                    if (AmountToBuy == 0)
-                                    {
-                                        Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {Math.Abs(Energy)}");
-                                        AmountToBuy = AmountToBuy + Math.Abs(Energy);
-                                    }
-                                    else if (AmountToBuy > 0)
-                                    {               //-5 + 2
-                                        Console.WriteLine($"!!!!!!!!!!!!! [{Name}]  My Energy is: {Energy} My Amount to buy is: {AmountToBuy} ");
-
-                                        int toBuy = (Energy) + AmountToBuy;
-                                        if (toBuy < 0)
-                                        {
-                                            Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {Math.Abs(toBuy)}");
-                                            AmountToBuy = AmountToBuy + Math.Abs(toBuy);
-
-                                        }
-                                    }
-
-                                }
-                                else if ((Energy) + AmountToBuy + OfferEnergyAmount == 0)
-                                {  //in that case after transanction is complete, energy would be 0
-                                    // so we stop future transactions
-                                    //stopBuying = true;
-                                    break;
-                                }
-
-                                // Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {AmountToBuy}");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[{Name}] Price Too High. My Price to buy is: {PriceToBuy} My Energy is: {Energy} My Amount to buy is: {AmountToBuy} My stop buying status is {stopBuying}");
-                                break;
-                            }
-
-
-
-
-                            /*  if (OfferEnergyAmount > Energy)
-                              {
-                                  OfferEnergyAmount = OfferEnergyAmount - Energy;
-                              }*/
-
-
-                            //Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy.\n");
                         }
                         break;
-
-                    case "refuseOffer":
-                        Console.WriteLine($"[{Name}] My energy is {Energy} Offer refused from: {message.Sender}");
-                        AmountToBuy = 0;
-                        break;
-
-
-                    case "dutchAuctionOfferAccept":
-                        string[] buyingSplit = parameters.Split(" ");
-                        int buyingPrice = Int32.Parse(buyingSplit[0]);
-                        int buyingAmount = Int32.Parse(buyingSplit[1]);
-
-                        if (Energy < 0)
-                        {
-                            Console.WriteLine($"ERRRRR:[{Name}] My energy is below zero - {Energy}");
-                            Send(message.Sender, "refuseOffer");
-                            break;
-
-                        }
-                        if (Energy == 0)
-                        {
-                            Console.WriteLine($"\t \t [{Name}] My part is done! My energy balance is {Energy} and i've Earned {myMoneyEarned}");
-
-                            Send(message.Sender, "refuseOffer");
-                            break;
-
-
-                        }
-                        //10      13   
-                        if (Energy > 0)
-                        {
-                            if (Energy < buyingAmount)
-                            {
-                                buyingAmount = Energy;
-                                Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; Sending less, as i dont have enought: {buyingAmount} My energy is {Energy}");
-                                myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
-                                Energy = Energy - buyingAmount;
-                                Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
-                                Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {Energy} and i've earned {myMoneyEarned}");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; He wants to buy {buyingAmount} for {buyingPrice}. Total = {buyingPrice * buyingAmount}");
-                                myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
-                                Energy = Energy - buyingAmount;
-                                Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
-                                Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {Energy} and i've earned {myMoneyEarned}");
-                            }
-
-
-                        }
-                        if (Energy == 0)
-                        {
-                            Console.WriteLine($"[{Name}] My part is done! My energy balance is {Energy} and i've Earned {myMoneyEarned}");
-                            //Stop();
-                        }
-                        break;
-
-
-                    case "sendEnergy":
-                        if (Energy == 0)
-                        {
-
-                            break;
-                        }
-
-                        string[] sendEnergySplit = parameters.Split(" ");
-                        int sendEnergyBuyingAmount = Int32.Parse(sendEnergySplit[0]);
-                        int sendEnergyTotalPrice = Int32.Parse(sendEnergySplit[1]);
-                        Energy = (Energy) + sendEnergyBuyingAmount;
-                        myMoneySpent = myMoneySpent + sendEnergyTotalPrice;
-                        Console.WriteLine($"\t \t [{Name}] I've just bought  from {message.Sender} This amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. Now my energy balance is: {Energy} and i've spend {myMoneySpent}");
-                        if (Energy == 0)
-                        {
-                            Console.WriteLine($"[{Name}] My part is done! My energy balance is {Energy} and i've spent {myMoneySpent}");
-                            Send(message.Sender, "imOut");
-
-                            // Stop();
-
-                        }
-                        AmountToBuy = 0;
-                        break;
-
 
 
                     case "japanAuction":
@@ -311,8 +135,7 @@ namespace Energy_MAS
 
                         if (Status == "buying")
                         {
-                            Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy.\n");
-
+                            //      Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy.\n");
                         }
                         break;
 
@@ -332,18 +155,17 @@ namespace Energy_MAS
         private void HandleInfromation(string parameters) //split the parameters, calculate energy balance and broadcast its name status and energy
         {
             string[] infoSplit = parameters.Split(" ");
-            MyDemand = Int32.Parse(infoSplit[0]);
-            MyGeneraton = Int32.Parse(infoSplit[1]);
-            MyPriceBuyUT = Int32.Parse(infoSplit[2]);
-            MyPriceSellUT = Int32.Parse(infoSplit[3]);
-            Energy = MyGeneraton - MyDemand;
-            if (Energy > 0) { Status = "selling"; } else if (Energy == 0) { Status = "sustainable"; Stop(); } else { Status = "buying"; }
-            Console.WriteLine($"[{Name}] Energy Balance: {Energy}; Status: {Status}; \nInfo - Demand: {MyDemand}; Generation: {MyGeneraton}; Price to buy from UT: {MyPriceBuyUT}; Price to sell to UT: {MyPriceSellUT}; \n");
+            myDemand = Int32.Parse(infoSplit[0]);
+            myGeneration = Int32.Parse(infoSplit[1]);
+            myPriceBuyUT = Int32.Parse(infoSplit[2]);
+            myPriceSellUT = Int32.Parse(infoSplit[3]);
+            myEnergy = myGeneration - myDemand;
+            if (myEnergy > 0) { Status = "selling"; } else if (myEnergy == 0) { Status = "sustainable"; Stop(); } else { Status = "buying"; }
+            //  Console.WriteLine($"[{Name}] myEnergy Balance: {myEnergy}; Status: {Status}; \nInfo - Demand: {myDemand}; Generation: {myGeneration}; Price to buy from UT: {myPriceBuyUT}; Price to sell to UT: {myPriceSellUT}; \n");
             if (Status != "sustainable")
             {
-                Broadcast($"broadcast [{Name}] {Status} {Energy}");
+                Broadcast($"broadcast [{Name}] {Status} {myEnergy}");
             }
-
             _turnsToWait = 100;
         }
 
@@ -365,7 +187,7 @@ namespace Energy_MAS
         private void AllMessagesRescived() //when all messeges recived step1 is complete
         {
             step1 = true;
-            Console.WriteLine($"1.-------------- [{Name}]: Messages recived:{messages.Count} OverallEnergy: {OverallEnergy + Energy}");
+            //      Console.WriteLine($"1.-------------- [{Name}]: Messages recived:{messages.Count} OverallEnergy: {OverallEnergy + myEnergy}");
             _turnsToWait = 2;
 
         }
@@ -378,28 +200,28 @@ namespace Energy_MAS
 
             Extract_Buyers(messages);
 
-            if ((OverallEnergy + Energy) > 0) // Dutch Auction
+            if ((OverallEnergy + myEnergy) > 0) // Dutch Auction
             {
                 if (Status == "selling")
                 {
-                    Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy. Im about to start Dutch Auction.\n");
+                    //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Dutch Auction.\n");
                     //Thread.Sleep(1000);
                     Dutch_Auction_Announce();
 
                 }
             }
-            else if ((OverallEnergy + Energy) < 0) // Japaneese Auction
+            else if ((OverallEnergy + myEnergy) < 0) // Japaneese Auction
             {
                 if (Status == "selling")
                 {
-                    Console.WriteLine($"\n [{Name}]: im {Status} and i have {Energy} energy. Im about to start Japaneese  Auction.\n");
+                    //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Japaneese  Auction.\n");
                     Japaneese_Auction_Announce();
 
                 }
             }
             else
             {
-                Console.WriteLine("We are self-sutainable, the energy company would starve.");
+                //        Console.WriteLine("We are self-sutainable, the energy company would starve.");
 
 
             }
@@ -409,9 +231,9 @@ namespace Energy_MAS
         /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
 moment, any bidder can claim the item.*/
         {
-            if (Energy > 0)
+            if (myEnergy > 0)
             {
-                SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {Energy}");
+                SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {myEnergy}");
                 _turnsToWait = messages.Count;
                 DutchWait = true;
                 PriceDutch--;
@@ -431,20 +253,6 @@ that bidder wins the item, and pays the price at which the last other bidder lef
 
         private void Extract_Buyers(List<String> messages) //for each message, get the buyer's name and strip "[" and  "]"
         {
-            // List<string> players = new List<string>();
-            /*Console.WriteLine("Messages count:" + messages.Count);
-            foreach (string household in messages)
-            {
-                string[] householdSplit = household.Split(" ");
-                if (householdSplit[1] == "buying")
-                {
-                     Console.WriteLine($" {Name} : Buyer:" + householdSplit[1] + householdSplit[0]);
-
-                    // string housholdStripped = householdSplit[0].Replace("[", "").Replace("]", "");
-                    //buyers.Add(housholdStripped);
-                    //Console.WriteLine("Buyer Added" + housholdStripped);
-                }
-            }*/
 
             for (var i = 0; i < messages.Count; i++)
 
@@ -466,8 +274,75 @@ that bidder wins the item, and pays the price at which the last other bidder lef
 
         }
 
+        private void HandleDuchAuctionOffer(string parameters, Message message)
+        {
+            if (myEnergy == 0)
+            {
+                Send(message.Sender, "imOut");
+            }
+            else
+            {
+                string[] offerSplit = parameters.Split(" ");
+                int PriceToBuy = myPriceBuyUT - 1;
+                int OfferPrice = Int32.Parse(offerSplit[0]);
+                int OfferEnergyAmount = Int32.Parse(offerSplit[1]);
+                if (PriceToBuy >= OfferPrice) // if Buy price is better than UT price
+                {
+                    if ((myEnergy) + myPendingEnergy + OfferEnergyAmount <= 0) // my demand is bigger or matchesthe offer, im buying all the energy
+                    {
+                        Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {OfferEnergyAmount}");
+                        myPendingEnergy = myPendingEnergy + OfferEnergyAmount; //we are adding that we have pending energy to be recived
+                    }
 
+                    else if ((myEnergy) + myPendingEnergy + OfferEnergyAmount > 0) //my demand is less than the offer so im buing less
+                    {
+
+                        if ((myEnergy) + myPendingEnergy < 0)
+                        {
+                            Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {Math.Abs((myEnergy) + myPendingEnergy)}");
+                            myPendingEnergy = myPendingEnergy + Math.Abs((myEnergy) + myPendingEnergy);
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        private void HandleDutchAuctionOfferAccept(string parameters, Message message)
+        {
+            if (myEnergy > 0)
+            {
+                string[] buyingSplit = parameters.Split(" ");
+                int buyingPrice = Int32.Parse(buyingSplit[0]);
+                int buyingAmount = Int32.Parse(buyingSplit[1]);
+
+                if (myEnergy < buyingAmount)
+                {
+                    buyingAmount = myEnergy;
+                    //  Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; Sending less, as i dont have enought: {buyingAmount} My energy is {myEnergy}");
+                    myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                    myEnergy = myEnergy - buyingAmount;
+                    Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
+                    //     Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {myEnergy} and i've earned {myMoneyEarned}");
+                }
+                else
+                {
+                    //  Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; He wants to buy {buyingAmount} for {buyingPrice}. Total = {buyingPrice * buyingAmount}");
+                    myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                    myEnergy = myEnergy - buyingAmount;
+                    Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
+                    // Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {myEnergy} and i've earned {myMoneyEarned}");
+                }
+
+            }
+            else
+            {
+                // Console.WriteLine($"ERRRRR:[{Name}] My energy is below zero - {myEnergy}");
+                Send(message.Sender, "refuseOffer");
+            }
+        }
     }
-
-
 }
