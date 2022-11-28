@@ -27,7 +27,9 @@ namespace Energy_MAS
 
             for (int i = 1; i <= Settings.NoHouseholds; i++)
             {
-                var householdAgent = new HouseholdAgent();
+                var householdAgent = new HouseholdAgentCombined();
+                // var householdAgent = new HouseholdAgentDutchAuction();
+
                 env.Add(householdAgent, $"Household:{i:D2}");
             }
 

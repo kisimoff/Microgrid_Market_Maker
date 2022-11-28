@@ -5,8 +5,9 @@
 
 namespace Energy_MAS
 {
-    public class HouseholdAgent : Agent
+    public class HouseholdAgentDutchAuction : Agent
     {
+
         private int myGeneration, myDemand, myPriceBuyUT, myPriceSellUT, myEnergy, myMoneyEarned, myMoneySpent, OverallEnergy, _turnsToWait;
         private bool step1, step2, DutchWait = false; //flow control bools
         private string? Status; // sustainable, buying, selling. Declared after initiation phase
@@ -17,8 +18,10 @@ namespace Energy_MAS
 
         public override void Setup() // initialisation phase
         {
+
             Send("environment", "start");
             _turnsToWait = 2;
+
         }
 
         public override void ActDefault() //step control, to initiate auction after everyone recived the first broadcast. 
@@ -33,19 +36,9 @@ namespace Energy_MAS
             }
             else if (!step2)
             {
-                if (--_turnsToWait <= 0)
-                {
-                    Auction_Decider();
-                }
+                Dutch_Auction_Announce();
             }
-            else if (DutchWait)
-            {
-                if (--_turnsToWait <= 0)
-                {
-                    DutchWait = false;
-                    Dutch_Auction_Announce();
-                }
-            }
+
 
         }
 
@@ -194,52 +187,30 @@ namespace Energy_MAS
 
 
 
-        private void Auction_Decider() //two auctions - Dutch when (overall energy) is > 0 and Japaneese when (overall energy) is < 0
+        private void Dutch_Auction_Announce()  // When (overall energy) is > 0
+        /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
+            moment, any bidder can claim the item.*/
         {
             step2 = true;
 
-            Extract_Buyers(messages);
+            if (Status == "selling")
 
-            if ((OverallEnergy + myEnergy) > 0) // Dutch Auction
             {
-                if (Status == "selling")
+                Extract_Buyers(messages);
+
+                //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Dutch Auction.\n");
+                //Thread.Sleep(1000);
+                if (myEnergy > 0)
                 {
-                    //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Dutch Auction.\n");
-                    //Thread.Sleep(1000);
-                    Dutch_Auction_Announce();
+                    SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {myEnergy}");
+                    _turnsToWait = messages.Count;
+                    DutchWait = true;
+                    PriceDutch--;
+
 
                 }
             }
-            else if ((OverallEnergy + myEnergy) < 0) // Japaneese Auction
-            {
-                if (Status == "selling")
-                {
-                    //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Japaneese  Auction.\n");
-                    Japaneese_Auction_Announce();
 
-                }
-            }
-            else
-            {
-                //        Console.WriteLine("We are self-sutainable, the energy company would starve.");
-
-
-            }
-
-        }
-        private void Dutch_Auction_Announce()  // When (overall energy) is > 0
-        /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
-moment, any bidder can claim the item.*/
-        {
-            if (myEnergy > 0)
-            {
-                SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {myEnergy}");
-                _turnsToWait = messages.Count;
-                DutchWait = true;
-                PriceDutch--;
-
-
-            }
         }
 
         private void Japaneese_Auction_Announce() // When(overall energy) is < 0
