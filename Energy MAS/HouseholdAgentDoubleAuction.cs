@@ -56,13 +56,13 @@ namespace Energy_MAS
                         break;
 
 
-                    case "calculatePriceBuyer":
-                        CalculatePriceBuyer(parameters);
+                    case "calculatePriceBuy":
+                        CalculatePriceBuy(parameters);
                         Send("central", $"priceBuy [{Name}] {myEnergy} {buyPrice}");
                         break;
 
-                    case "calculatePriceSeller":
-                        CalculatePriceSeller(parameters);
+                    case "calculatePriceSell":
+                        CalculatePriceSell(parameters);
                         Send("central", $"priceSell [{Name}] {myEnergy} {sellPrice}");
 
                         break;
@@ -100,7 +100,7 @@ namespace Energy_MAS
 
 
 
-        private void CalculatePriceBuyer(string parameters) //split the parameters, calculate energy balance and broadcast its name status and energy
+        private void CalculatePriceBuy(string parameters) //split the parameters, calculate energy balance and broadcast its name status and energy
         {
             string[] messageSplit = parameters.Split(" ");
             OverallEnergy = Int32.Parse(messageSplit[0]);
@@ -127,7 +127,7 @@ namespace Energy_MAS
         }
 
 
-        private void CalculatePriceSeller(string parameters) //split the parameters, calculate energy balance and broadcast its name status and energy
+        private void CalculatePriceSell(string parameters) //split the parameters, calculate energy balance and broadcast its name status and energy
         {
             OverallEnergy = Int32.Parse(parameters);
             double midPriceFormula = myPriceSellUT + 10;
