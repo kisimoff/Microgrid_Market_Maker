@@ -13,13 +13,14 @@ namespace Energy_MAS
         //2. evaluate if the calculations are correct
 
         private int myGeneration, myDemand, myPriceBuyUT, myPriceSellUT, overallEnergy, myMoney, OverallEnergy, _turnsToWait, _turnsWaited, agentsCount;
-        private bool step1, step2, DutchWait = false; //flow control bools
+        private bool step1, step2, neverMached, check, end = false; //flow control bools
         private string? Status; // sustainable, buying, selling. Declared after initiation phase
         private int PriceDutch = 23; //(= Max price to Buy from UT) starting price for Dutch Auction 
         private int myPendingEnergy = 0; //updates on accepted offer (pending energy to be recived), used to make descisions of future offers
         List<string> messages = new List<string>(); //gets all the messages, recives one meassage from each participant with his information
         List<string> buyers = new List<string>(); //filters the buyers from messages list
         List<string> sellers = new List<string>(); //filters the sellers from messages list
+
         int buyBidsCount = 0;
         int sellerBidsCount = 0;
         /*        Tuple<string, int, int>? buyOffers;
@@ -86,6 +87,7 @@ namespace Energy_MAS
                     SendToMany(sellers, $"calculatePriceSell {overallEnergy}");
                     step1 = true;
                     _turnsWaited = 0;
+
                 }
             }
             if (step2)
@@ -175,7 +177,25 @@ namespace Energy_MAS
             string buyerName = messageSplit[0].Replace("[", "").Replace("]", "");
             int buyerAmountToBuy = Int32.Parse(messageSplit[1]);
             int buyerPriceToBuy = Int32.Parse(messageSplit[2]);
-            buyBidsList.Add(new BuyBid { agentName = buyerName, amount = buyerAmountToBuy, price = buyerPriceToBuy });
+
+            if (check)
+            {
+
+                for (int i = 0; i < buyBidsList.Count; i++) // Loop through List with foreach
+                {
+                    if (buyBidsList[i].agentName == buyerName)
+                    {
+                        buyBidsList[i].price = buyerPriceToBuy;
+                    }
+                }
+            }
+            else
+            {
+                buyBidsList.Add(new BuyBid { agentName = buyerName, amount = buyerAmountToBuy, price = buyerPriceToBuy });
+
+            }
+
+
             buyBidsCount = buyBidsCount + 1;
             Console.WriteLine($"BuyList: {buyBidsList.Count}; BuyCount: {buyBidsCount}");
             _turnsWaited = 0;
@@ -193,21 +213,39 @@ namespace Energy_MAS
             string sellerName = messageSplit[0].Replace("[", "").Replace("]", "");
             int sellerAmountToBuy = Int32.Parse(messageSplit[1]);
             int sellerPriceToBuy = Int32.Parse(messageSplit[2]);
-            sellBidsList.Add(new SellBid { agentName = sellerName, amount = sellerAmountToBuy, price = sellerPriceToBuy });
+
+
+            if (check)
+            {
+
+                for (int i = 0; i < sellBidsList.Count; i++) // Loop through List with foreach
+                {
+                    if (sellBidsList[i].agentName == sellerName)
+                    {
+                        sellBidsList[i].price = sellerPriceToBuy;
+                    }
+                }
+            }
+            else
+            {
+                sellBidsList.Add(new SellBid { agentName = sellerName, amount = sellerAmountToBuy, price = sellerPriceToBuy });
+
+            }
+
+
             sellerBidsCount = sellerBidsCount + 1;
             Console.WriteLine($"SellList: {sellBidsList.Count}; SellCount:{sellerBidsCount}");
             _turnsWaited = 0;
             step2 = true;
-
-
-
-
             // Console.WriteLine($"\n[CENTRAL]: Recived: from:{sellerName}; PriceSell:{sellerPriceToBuy}; Amount:{sellerAmountToBuy}; \n");
 
         }
 
 
-
+        private void Ended()
+        {
+            Console.WriteLine("Shows over");
+        }
 
         private void SortLists()
         {
@@ -219,26 +257,182 @@ namespace Energy_MAS
 
             foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
             {
-                Console.WriteLine($"[BUY]: {buyBidsList.price}$; From: {buyBidsList.agentName}; ");
+                Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
             }
 
             foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
             {
-                Console.WriteLine($"[SELL]: {sellBidsList.price}$; From: {sellBidsList.agentName};");
+                Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
             }
 
             if (buyBidsList[0].price >= sellBidsList[0].price)
             {
+                neverMached = false;
                 Console.WriteLine($"[MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
+                HandleMatches();
+            }
+            else
+            {
+                neverMached = true;
+                noMatch();
             }
 
 
 
         }
+        private void NoBuyersLeft()
+        {
+            Console.WriteLine($"No Buyers LEFT! COUNT:{buyBidsList.Count}, OverallEnergy has to be positive {overallEnergy}");
+        }
+        private void NoSellersLeft()
+        {
+            Console.WriteLine($"No Sellers LEFT! COUNT:{sellBidsList.Count}, OverallEnergy has to be negative {overallEnergy}");
+        }
+
+        private void HandleMatches()
+        {
+            int sellerIndex = 0;
+            int buyerIndex = 0;
+            int amountToSend = 0;
+            string? nameToSend;
+            int priceSend = 0;
+            string allBuyers = "";
+
+
+            while (sellBidsList[sellerIndex].amount > 0) //this works if there is negative energy balance if positive loop forever.
+                                                         //if possiive,  there are more sellers, and there will be no buyers left
+            {
+                if (sellBidsList[sellerIndex].amount >= Math.Abs(buyBidsList[buyerIndex].amount))
+                {
+                    nameToSend = buyBidsList[buyerIndex].agentName;
+                    amountToSend = Math.Abs(buyBidsList[buyerIndex].amount);
+                    priceSend = buyBidsList[buyerIndex].price;
+
+                    allBuyers = allBuyers + $"{nameToSend},{priceSend},{amountToSend};";
+
+                    sellBidsList[sellerIndex].amount = sellBidsList[sellerIndex].amount - amountToSend;
+
+                    Console.WriteLine($"{allBuyers} myEnergy:{sellBidsList[sellerIndex].amount}");
+
+                    buyBidsList[buyerIndex].amount = 0;
+
+
+                    Console.WriteLine($"About to remove:{buyBidsList[buyerIndex].agentName}");
+                    buyBidsList.RemoveAt(buyerIndex);
+                    //Console.WriteLine($"Now next is:{buyBidsList[buyerIndex].agentName}");
+
+                    if (buyBidsList.Count == 0)
+                    {
+                        NoBuyersLeft();
+                        return;
 
 
 
+                    }
+                }
+                else //buyer demand is higher than seller amount
+                {
 
+                    nameToSend = buyBidsList[buyerIndex].agentName;
+                    priceSend = buyBidsList[buyerIndex].price;
+                    amountToSend = sellBidsList[sellerIndex].amount;
+                    sellBidsList[sellerIndex].amount = 0;
+                    allBuyers = allBuyers + $"{nameToSend},{priceSend},{amountToSend};";
+                    Console.WriteLine($"{allBuyers} myEnergy:{sellBidsList[sellerIndex].amount}");
+                    buyBidsList[buyerIndex].amount = buyBidsList[buyerIndex].amount + amountToSend;
+
+                    //Console.WriteLine($"About to remove:{buyBidsList[buyerIndex].agentName}");
+                    //buyBidsList.RemoveAt(buyerIndex);
+                    //Console.WriteLine($"Now next is:{buyBidsList[buyerIndex].agentName}");
+
+                }
+            };
+
+
+
+            Console.WriteLine($"[SELLER] My energy should be 0 - {sellBidsList[sellerIndex].amount};{sellBidsList[sellerIndex].agentName} Im about to get removed from the list.");
+            Send(sellBidsList[sellerIndex].agentName, $"requestSendEnergy {allBuyers}");
+            sellBidsList.RemoveAt(sellerIndex);
+            if (sellBidsList.Count == 0)
+            {
+                NoSellersLeft();
+                return;
+
+            }
+            if (buyBidsList.Count == 0)
+            {
+                NoBuyersLeft();
+                return;
+            }
+
+            if (buyBidsList[0].price >= sellBidsList[0].price)
+            {
+                Console.WriteLine($"[MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
+                HandleMatches();
+            }
+            else
+            {
+                noMatch();
+
+
+                /*  Console.WriteLine($"[NO MATCH!]");
+              foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
+              {
+                  Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
+                  buyers.Add(buyBidsList.agentName);
+                  //Send(buyBidsList.agentName, $"noMatch, {sellBidsList[0].price}");
+              }
+
+              foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
+              {
+                  Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
+                  sellers.Add(sellBidsList.agentName);
+                  //Send(sellBidsList.agentName, $"noMatch, {buyBidsList[0].price}");
+              }
+              SendToMany(buyers, $"noMatchBuyer {sellBidsList[0].price}");
+              SendToMany(sellers, $"noMatchSeller {buyBidsList[0].price}");
+*/
+            }
+        }
+
+
+
+        private void noMatch()
+        {
+            check = true;
+            Console.WriteLine($"[NO MATCH!]");
+
+
+            if (neverMached)
+            {
+
+                SendToMany(buyers, $"noMatchBuyer {sellBidsList[0].price}");
+                SendToMany(sellers, $"noMatchSeller {buyBidsList[0].price}");
+            }
+            else
+            {
+                buyers.Clear();
+                sellers.Clear();
+                foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
+                {
+                    Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
+                    buyers.Add(buyBidsList.agentName);
+                    //Send(buyBidsList.agentName, $"noMatch, {sellBidsList[0].price}");
+                }
+
+                foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
+                {
+                    Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
+                    sellers.Add(sellBidsList.agentName);
+                    //Send(sellBidsList.agentName, $"noMatch, {buyBidsList[0].price}");
+                }
+
+
+                SendToMany(buyers, $"noMatchBuyer {sellBidsList[0].price}");
+                SendToMany(sellers, $"noMatchSeller {buyBidsList[0].price}");
+            }
+
+        }
 
         public static async Task FileWriteReport(string report)
         {

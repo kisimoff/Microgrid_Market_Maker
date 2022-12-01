@@ -15,7 +15,9 @@ namespace Energy_MAS
         private int myPendingEnergy = 0; //updates on accepted offer (pending energy to be recived), used to make descisions of future offers
         List<string> messages = new List<string>(); //gets all the messages, recives one meassage from each participant with his information
         List<string> buyers = new List<string>(); //filters the buyers from messages list
-
+        private double halfPrice = 0;
+        private double coefLess = 0.4;
+        private double coefMore = 0.6;
         public override void Setup() // initialisation phase
         {
 
@@ -64,9 +66,25 @@ namespace Energy_MAS
                     case "calculatePriceSell":
                         CalculatePriceSell(parameters);
                         Send("central", $"priceSell [{Name}] {myEnergy} {sellPrice}");
-
                         break;
-
+                    case "requestSendEnergy":
+                        HandleRequestSendEnergy(parameters);
+                        break;
+                    case "sendEnergy":
+                        HandleSendEnergy(parameters);
+                        break;
+                    case "noMatchBuyer":
+                        Console.WriteLine($"[OLD PRICE Buyer {Name}]:{buyPrice}");
+                        HandleNoMatchBuyer(parameters);
+                        Console.WriteLine($"[NEW PRICE Buyer {Name}]:{buyPrice}");
+                        Send("central", $"priceBuy [{Name}] {myEnergy} {buyPrice}");
+                        break;
+                    case "noMatchSeller":
+                        Console.WriteLine($"[OLD PRICE Seller {Name}]:{sellPrice}");
+                        HandleNoMatchSeller(parameters);
+                        Console.WriteLine($"[NEW PRICE Seller {Name}]:{sellPrice}");
+                        Send("central", $"priceSell [{Name}] {myEnergy} {sellPrice}");
+                        break;
 
                     default:
                         break;
@@ -76,6 +94,103 @@ namespace Energy_MAS
             {
                 Console.WriteLine(ex.Message);
             }
+        }
+        private void HandleNoMatchBuyer(string parameters)
+        {
+            Console.WriteLine($"Im {Status} recived NOMATCH with: {parameters}");
+
+
+            if (OverallEnergy > 0)// advantage
+            {
+                if (halfPrice == 0)
+                {
+                    halfPrice = (double)buyPrice + coefLess;
+
+                }
+                else
+                {
+                    halfPrice = halfPrice + coefLess;
+                }
+
+                buyPrice = Convert.ToInt32(halfPrice);
+
+            }
+            else // disadvantage
+            {
+                if (halfPrice == 0)
+                {
+                    halfPrice = (double)buyPrice + coefMore;
+
+                }
+                else
+                {
+                    halfPrice = halfPrice + coefMore;
+                }
+
+                buyPrice = Convert.ToInt32(halfPrice);
+
+            }
+        }
+
+        private void HandleNoMatchSeller(string parameters)
+        {
+            Console.WriteLine($"Im {Status} recived NOMATCH with: {parameters}");
+
+            if (OverallEnergy > 0)// disadvantage
+            {
+                if (halfPrice == 0)
+                {
+                    halfPrice = (double)sellPrice - coefMore;
+
+                }
+                else
+                {
+                    halfPrice = halfPrice - coefMore;
+                }
+
+                sellPrice = Convert.ToInt32(halfPrice);
+
+            }
+            else // advantage
+            {
+                if (halfPrice == 0)
+                {
+                    halfPrice = (double)sellPrice - coefLess;
+
+                }
+                else
+                {
+                    halfPrice = halfPrice - coefLess;
+                }
+
+                sellPrice = Convert.ToInt32(halfPrice);
+
+            }
+        }
+        private void HandleRequestSendEnergy(string parameters)
+        {
+            string[] buyersToSend = parameters.Split(";");
+            int loops = buyersToSend.Length - 1; //last element is blank space
+            for (int i = 0; i < loops; i++)
+            {
+                string[] infoSplit = buyersToSend[i].Split(","); //0-name 1-price 2-amount
+                Send(infoSplit[0], $"sendEnergy {infoSplit[1]} {infoSplit[2]}");
+                myMoneyEarned = myMoneyEarned + (Int32.Parse(infoSplit[1]) * Int32.Parse(infoSplit[2]));
+                myEnergy = myEnergy - Int32.Parse(infoSplit[2]);
+            }
+            Console.WriteLine($"Seller: {Name} SENT  Earned:{myMoneyEarned}, energy:{myEnergy}");
+
+        }
+
+        private void HandleSendEnergy(string parameters)
+        {
+            string[] infoSplit = parameters.Split(" ");
+            int recivePrice = Int32.Parse(infoSplit[0]);
+            int reciveAmount = Int32.Parse(infoSplit[1]);
+            myMoneySpent = myMoneySpent + (recivePrice * reciveAmount);
+            myEnergy = myEnergy + reciveAmount;
+            Console.WriteLine($"Buyer: {Name} BOUGHT Spend:{myMoneySpent}, energy:{myEnergy}");
+
         }
 
 
