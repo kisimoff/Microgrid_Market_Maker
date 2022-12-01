@@ -5,16 +5,21 @@
 
 namespace Energy_MAS
 {
-    public class HouseholdAgentDutchAuction : Agent
+    public class HouseholdAgentDutch : Agent
     {
 
-        private int myGeneration, myDemand, myPriceBuyUT, myPriceSellUT, myEnergy, myMoneyEarned, myMoneySpent, OverallEnergy, _turnsToWait;
+        //To Do:
+        //1. export each agent info to a file
+        //2. evaluate if the calculations are correct
+
+        private int myGeneration, myDemand, myPriceBuyUT, myPriceSellUT, myEnergy, myMoney, OverallEnergy, _turnsToWait;
         private bool step1, step2, DutchWait = false; //flow control bools
         private string? Status; // sustainable, buying, selling. Declared after initiation phase
         private int PriceDutch = 23; //(= Max price to Buy from UT) starting price for Dutch Auction 
         private int myPendingEnergy = 0; //updates on accepted offer (pending energy to be recived), used to make descisions of future offers
         List<string> messages = new List<string>(); //gets all the messages, recives one meassage from each participant with his information
         List<string> buyers = new List<string>(); //filters the buyers from messages list
+        List<string> sellers = new List<string>(); //filters the sellers from messages list
 
         public override void Setup() // initialisation phase
         {
@@ -36,9 +41,19 @@ namespace Energy_MAS
             }
             else if (!step2)
             {
-                Dutch_Auction_Announce();
+                if (--_turnsToWait <= 0)
+                {
+                    Auction_Decider();
+                }
             }
-
+            else if (DutchWait)
+            {
+                if (--_turnsToWait <= 0)
+                {
+                    DutchWait = false;
+                    Dutch_Auction_Announce();
+                }
+            }
 
         }
 
@@ -74,7 +89,7 @@ namespace Energy_MAS
 
 
                     case "dutchAuctionOfferAccept": // recived by Seller
-                        // sent by Seller when they are happy with the price
+                        // sent by Buyer when they are happy with the price
                         HandleDutchAuctionOfferAccept(parameters, message);
                         break;
 
@@ -88,7 +103,7 @@ namespace Energy_MAS
                         // sent by Seller when a buyer accepts an offer
                         if (myEnergy == 0)
                         {
-                            Send(message.Sender, "imOut");
+                            Send(message.Sender, "buyerOut");
                             break;
                         }
                         else
@@ -97,28 +112,68 @@ namespace Energy_MAS
                             int sendEnergyBuyingAmount = Int32.Parse(sendEnergySplit[0]);
                             int sendEnergyTotalPrice = Int32.Parse(sendEnergySplit[1]);
                             myEnergy = (myEnergy) + sendEnergyBuyingAmount;
-                            myMoneySpent = myMoneySpent + sendEnergyTotalPrice;
+                            myMoney = myMoney - sendEnergyTotalPrice;
+                            Console.WriteLine($"\t \t [{Name}]  bought  from {message.Sender}  amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. my energy balance is: {myEnergy} my money balance {myMoney}");
+
                         }
-                        //  Console.WriteLine($"\t \t [{Name}] I've just bought  from {message.Sender} This amount: {sendEnergyBuyingAmount} for {sendEnergyTotalPrice}. Now my energy balance is: {myEnergy} and i've spend {myMoneySpent}");
                         myPendingEnergy = 0;
                         break;
 
-                    case "imOut": //recived by Seller,
+                    case "buyerOut": //recived by Seller,
                         //send by Buyer when the Buyer Energy = 0;
                         buyers.Remove(message.Sender);
+                        Console.WriteLine($"Buyers number: {buyers.Count}");
+
                         if (buyers.Count == 0) //if no buyers tell everyone
                         {
                             Broadcast("noBuyersLeft");
                         }
                         break;
 
+                    case "sellerOut":
+                        sellers.Remove(message.Sender);
+                        Console.WriteLine($"Sellers number: {sellers.Count}");
+                        if (sellers.Count == 0)
+                        {
+                            SendToMany(buyers, "noSellersLeft");
+                        }
+                        break;
+
                     case "noBuyersLeft": //recived by anyone
                         //sell all exess energy to UC, in duch auction only sellers do it
+                        //
                         if (myEnergy > 0)
                         {
-                            myMoneyEarned = myMoneyEarned + (myPriceSellUT * myEnergy);
+                            Console.WriteLine($" \t \t {Name} Before selling to UC, Money: {myMoney}");
+
+                            myMoney = myMoney + (myPriceSellUT * (myEnergy));
                             myEnergy = 0;
-                            Console.WriteLine($" \t \t {Name} Sold to UC, Money: {myMoneyEarned}");
+                            Console.WriteLine($" \t \t {Name} Sold to UC, Money: {myMoney}");
+                            string report = Name + " My Energy: " + myEnergy + "; Status: " + Status + "; Demand: " + myDemand + "; Generation: " + myGeneration + "; Price to buy from UT: " + myPriceBuyUT + "; Price to sell to UT: " + myPriceSellUT + "; Money:" + myMoney;
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                            FileWriteReport(report);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                        }
+                        break;
+
+                    case "noSellersLeft": //recived by anyone
+                        //sell all exess energy to UC, in duch auction only sellers do it
+                        //
+                        if (myEnergy < 0)
+                        {
+                            Console.WriteLine($" \t \t {Name} Before buying from UC, Money: {myMoney}");
+
+                            myMoney = myMoney - (myPriceBuyUT * Math.Abs(myEnergy));
+                            myEnergy = 0;
+                            Console.WriteLine($" \t \t {Name} Bought from UC, Money: {myMoney}");
+
+                            string report = Name + " My Energy: " + myEnergy + "; Status: " + Status + "; Demand: " + myDemand + "; Generation: " + myGeneration + "; Price to buy from UT: " + myPriceBuyUT + "; Price to sell to UT: " + myPriceSellUT + "; Money:" + myMoney;
+
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                            FileWriteReport(report);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                         }
                         break;
 
@@ -159,7 +214,7 @@ namespace Energy_MAS
             {
                 Broadcast($"broadcast [{Name}] {Status} {myEnergy}");
             }
-            _turnsToWait = 100;
+            _turnsToWait = 2;
         }
 
 
@@ -180,37 +235,64 @@ namespace Energy_MAS
         private void AllMessagesRescived() //when all messeges recived step1 is complete
         {
             step1 = true;
-            //      Console.WriteLine($"1.-------------- [{Name}]: Messages recived:{messages.Count} OverallEnergy: {OverallEnergy + myEnergy}");
+            Console.WriteLine($"1.-------------- [{Name}]: Messages recived:{messages.Count} OverallEnergy: {OverallEnergy + myEnergy}");
             _turnsToWait = 2;
 
         }
 
 
 
-        private void Dutch_Auction_Announce()  // When (overall energy) is > 0
-        /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
-            moment, any bidder can claim the item.*/
+        private void Auction_Decider() //two auctions - Dutch when (overall energy) is > 0 and Japaneese when (overall energy) is < 0
         {
             step2 = true;
 
-            if (Status == "selling")
+            Extract_Players(messages);
 
+
+            if ((OverallEnergy + myEnergy) > 0) // Dutch Auction
             {
-                Extract_Buyers(messages);
-
-                //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Dutch Auction.\n");
-                //Thread.Sleep(1000);
-                if (myEnergy > 0)
+                if (Status == "selling")
                 {
-                    SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {myEnergy}");
-                    _turnsToWait = messages.Count;
-                    DutchWait = true;
-                    PriceDutch--;
 
+                    //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Dutch Auction.\n");
+                    //Thread.Sleep(1000);
+                    Dutch_Auction_Announce();
 
                 }
             }
+            else if ((OverallEnergy + myEnergy) < 0) // Japaneese Auction
+            {
+                if (Status == "selling")
+                {
 
+                    Dutch_Auction_Announce();
+
+                    //         Console.WriteLine($"\n [{Name}]: im {Status} and i have {myEnergy} energy. Im about to start Japaneese  Auction.\n");
+                    // Japaneese_Auction_Announce();
+
+                }
+            }
+            else
+            {
+                //        Console.WriteLine("We are self-sutainable, the energy company would starve.");
+
+
+            }
+
+        }
+        private void Dutch_Auction_Announce()  // When (overall energy) is > 0
+        /*     In a Dutch auction, an initial price is set that is very high, after which the price is gradually decreased.At any
+moment, any bidder can claim the item.*/
+        {
+            if (myEnergy > 0)
+            {
+                SendToMany(buyers, $"dutchAuctionOffer {PriceDutch} {myEnergy}");
+                _turnsToWait = messages.Count;
+                DutchWait = true;
+                PriceDutch--;
+
+
+            }
         }
 
         private void Japaneese_Auction_Announce() // When(overall energy) is < 0
@@ -222,18 +304,25 @@ that bidder wins the item, and pays the price at which the last other bidder lef
 
         }
 
-        private void Extract_Buyers(List<String> messages) //for each message, get the buyer's name and strip "[" and  "]"
+        private void Extract_Players(List<String> messages) //for each message, get the buyer's name and strip "[" and  "]"
         {
 
             for (var i = 0; i < messages.Count; i++)
 
             {
                 string[] householdSplit = messages[i].Split(" ");
+                string housholdStripped = householdSplit[0].Replace("[", "").Replace("]", "");
+
                 if (householdSplit[1] == "buying")
                 {
-                    string housholdStripped = householdSplit[0].Replace("[", "").Replace("]", "");
 
                     buyers.Add(housholdStripped);
+
+                }
+                else if (householdSplit[1] == "selling")
+                {
+
+                    sellers.Add(housholdStripped);
 
                 }
             }
@@ -249,7 +338,7 @@ that bidder wins the item, and pays the price at which the last other bidder lef
         {
             if (myEnergy == 0)
             {
-                Send(message.Sender, "imOut");
+                Send(message.Sender, "buyerOut");
             }
             else
             {
@@ -259,7 +348,7 @@ that bidder wins the item, and pays the price at which the last other bidder lef
                 int OfferEnergyAmount = Int32.Parse(offerSplit[1]);
                 if (PriceToBuy >= OfferPrice) // if Buy price is better than UT price
                 {
-                    if ((myEnergy) + myPendingEnergy + OfferEnergyAmount <= 0) // my demand is bigger or matchesthe offer, im buying all the energy
+                    if ((myEnergy) + myPendingEnergy + OfferEnergyAmount <= 0) // my demand is bigger or matches the offer, im buying all the energy
                     {
                         Send(message.Sender, $"dutchAuctionOfferAccept {OfferPrice} {OfferEnergyAmount}");
                         myPendingEnergy = myPendingEnergy + OfferEnergyAmount; //we are adding that we have pending energy to be recived
@@ -280,6 +369,14 @@ that bidder wins the item, and pays the price at which the last other bidder lef
 
             }
 
+
+        }
+
+        public static async Task FileWriteReport(string report)
+        {
+            using StreamWriter file = new("C:/Users/Vincent/Desktop/AgentsOutput.txt", append: true);
+
+            await file.WriteLineAsync(report);
         }
 
         private void HandleDutchAuctionOfferAccept(string parameters, Message message)
@@ -294,18 +391,25 @@ that bidder wins the item, and pays the price at which the last other bidder lef
                 {
                     buyingAmount = myEnergy;
                     //  Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; Sending less, as i dont have enought: {buyingAmount} My energy is {myEnergy}");
-                    myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                    myMoney = myMoney + (buyingPrice * buyingAmount);
                     myEnergy = myEnergy - buyingAmount;
                     Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
-                    //     Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {myEnergy} and i've earned {myMoneyEarned}");
+                    //     Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {myEnergy} and i've earned {myMoney}");
                 }
                 else
                 {
                     //  Console.WriteLine($"[{Name}] Offer Accepted by {message.Sender}; He wants to buy {buyingAmount} for {buyingPrice}. Total = {buyingPrice * buyingAmount}");
-                    myMoneyEarned = myMoneyEarned + (buyingPrice * buyingAmount);
+                    myMoney = myMoney + (buyingPrice * buyingAmount);
                     myEnergy = myEnergy - buyingAmount;
                     Send(message.Sender, $"sendEnergy {buyingAmount} {(buyingPrice * buyingAmount)}");
-                    // Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {myEnergy} and i've earned {myMoneyEarned}");
+                    // Console.WriteLine($"[{Name}] I've just send to {message.Sender} This amount: {buyingAmount} for {buyingPrice * buyingAmount}. Now my energy balance is: {myEnergy} and i've earned {myMoney}");
+                }
+
+                if (myEnergy == 0)
+
+                {
+                    SendToMany(sellers, "sellerOut");
+
                 }
 
             }
@@ -314,6 +418,8 @@ that bidder wins the item, and pays the price at which the last other bidder lef
                 // Console.WriteLine($"ERRRRR:[{Name}] My energy is below zero - {myEnergy}");
                 Send(message.Sender, "refuseOffer");
             }
+
+
         }
     }
 }

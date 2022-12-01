@@ -27,14 +27,32 @@ namespace Energy_MAS
 
             for (int i = 1; i <= Settings.NoHouseholds; i++)
             {
-                var householdAgent = new HouseholdAgentCombined();
-                // var householdAgent = new HouseholdAgentDutchAuction();
+                if (Settings.isDutchAuction)
+                {
+                    var householdAgent = new HouseholdAgentDutch();
+                    // var householdAgent = new HouseholdAgentDutchAuction();
+                    env.Add(householdAgent, $"Household:{i:D2}");
+                }
+                else if (!Settings.isDutchAuction)
+                {
+                    //double auction
+                    var householdAgent = new HouseholdAgentDoubleAuction();
+                    // var householdAgent = new HouseholdAgentDutchAuction();
+                    env.Add(householdAgent, $"Household:{i:D2}");
+                }
 
-                env.Add(householdAgent, $"Household:{i:D2}");
+
+
             }
 
             var environmentAgent = new EnvironmentAgent();
             env.Add(environmentAgent, "environment");
+            if (!Settings.isDutchAuction)
+            {
+                var centralAgent = new CentralAgent();
+                // var householdAgent = new HouseholdAgentDutchAuction();
+                env.Add(centralAgent, "central");
+            }
             env.Start();
         }
     }
