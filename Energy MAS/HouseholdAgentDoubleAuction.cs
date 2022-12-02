@@ -20,8 +20,8 @@ namespace Energy_MAS
         private double coefLess = 0.4;
         private double coefMore = 0.6;
         private bool Once = true;
-
-
+        private int Unclean = 0;
+        private bool showUnclean = false; //change to true to see the unclean energy bought
         public override void Setup() // initialisation phase
         {
 
@@ -46,17 +46,23 @@ namespace Energy_MAS
                         {
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"-{myMoneySpent}\"}},";
                             Console.WriteLine(report);
-                            FileWriteAllAgentsReport(report);
 
+                            if (Unclean != 0 && showUnclean)
+                            {
+                                Console.WriteLine($"[{Name}] Unclean Energy Bought: {Math.Abs(Unclean)}; Overall Energy in the System: {OverallEnergy}");
+                            }
+                            else
+
+                                FileWriteAllAgentsReport(report);
+                            step1 = false;
 
                         }
                         else if (Status == "selling")
                         {
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
                             Console.WriteLine(report);
-
                             FileWriteAllAgentsReport(report);
-
+                            step1 = false;
 
                         }
                         else
@@ -64,10 +70,10 @@ namespace Energy_MAS
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
                             FileWriteAllAgentsReport(report);
                             Console.WriteLine(report);
+                            step1 = false;
 
                         }
 
-                        step1 = false;
                     }
 
                     _turnsWaited = 0;
@@ -134,9 +140,10 @@ namespace Energy_MAS
                     case "noSellersLeft":
                         if (myEnergy < 0)
                         {
+                            Unclean = myEnergy;
                             Console.WriteLine($" \t \t {Name} Before buying from UC, Money: {myMoneySpent}");
-
                             myMoneySpent = myMoneySpent + (myPriceBuyUT * Math.Abs(myEnergy));
+
                             myEnergy = 0;
                             Console.WriteLine($" \t \t {Name} Bought from UC, Money: {myMoneySpent}");
 
@@ -363,10 +370,11 @@ namespace Energy_MAS
         public static async Task FileWriteAllAgentsReport(string report)
         {
 
-
             using StreamWriter file = new($"C:/Users/Vincent/Desktop/AllAgentsReport.txt", append: true);
             await file.WriteLineAsync(report);
         }
+
+
 
     }
 }

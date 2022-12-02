@@ -13,7 +13,7 @@ namespace Energy_MAS
         //2. evaluate if the calculations are correct
 
         private int overallEnergy, _turnsWaited, agentsCount;
-        private bool step1, step2, neverMached, check, step3, step4 = false; //flow control bools
+        private bool step1, step2, neverMached, check, step3, step4, step5 = false; //flow control bools
         private int PriceDutch = 23; //(= Max price to Buy from UT) starting price for Dutch Auction 
         List<string> messages = new List<string>(); //gets all the messages, recives one meassage from each participant with his information
         List<string> buyers = new List<string>(); //filters the buyers from messages list
@@ -21,6 +21,7 @@ namespace Energy_MAS
         int buyBidsCount = 0;
         int sellerBidsCount = 0;
         bool printOrders = false;
+        int totalAgentsReported = 0;
         class BuyBid
         {
             public string? agentName { get; set; }
@@ -97,14 +98,33 @@ namespace Energy_MAS
                 _turnsWaited = _turnsWaited + 1;
                 if (_turnsWaited >= 100)
                 {
-                    GenerateReport();
+                    FileCountMessages();
                     step4 = false;
                     _turnsWaited = 0;
-
+                    step5 = true;
                 }
 
             }
+            /*  if (step5)
+              {
+                  _turnsWaited = _turnsWaited + 1;
+                  if (_turnsWaited >= 100)
+                  {
+                      FileCountAgents();
+                      if (totalAgentsReported != 20)
+                      {
+                          Console.WriteLine($"Reported less than 20 - {totalAgentsReported}");
+                          _turnsWaited = 0;
+                      }
+                      else
+                      {
+                          Console.WriteLine($"Reported EXACTLY 20 - {totalAgentsReported}");
 
+                          step5 = false;
+                          _turnsWaited = 0;
+                      }
+                  }
+              }*/
 
         }
 
@@ -463,11 +483,19 @@ namespace Energy_MAS
         }
 
 
-        private void GenerateReport()
+        private void FileCountMessages()
         {
             int messagesCountFile = File.ReadAllLines("C:/Users/Vincent/Desktop/AllMessages.txt").Length;
             Console.WriteLine($"Total Messages Exchanged: {messagesCountFile}");
             File.Delete("C:/Users/Vincent/Desktop/AllMessages.txt");
+
+        }
+
+        private void FileCountAgents()
+        {
+            totalAgentsReported = File.ReadAllLines("C:/Users/Vincent/Desktop/AllAgentsReport.txt").Length;
+            Console.WriteLine($"Total Agents Reported: {totalAgentsReported}");
+            // File.Delete("C:/Users/Vincent/Desktop/AllMessages.txt");
 
         }
     }
