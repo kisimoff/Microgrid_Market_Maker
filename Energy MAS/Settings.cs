@@ -5,8 +5,11 @@
     {
         public static int NoHouseholds = 20;
         public static bool isDutchAuction = false; //change to false to switch to Double Auction
-
+                                                   // public static int messagesCount = 0;
     }
+
+
+
 
 
 }

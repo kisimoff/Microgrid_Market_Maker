@@ -35,10 +35,20 @@ class EnvironmentAgent : Agent
                                                                                                            //offers to buy 1kWh of renewable energy for
                 string content = $"inform {demand} {generation} {priceToBuyFromUtility} {priceToSellToUtility}";
                 Send(senderID, content); //send the message with this information back to the household agent that requested it
+                //FileWriteMessages($"Environment: {senderID} {content}");
+                FileWriteMessages("env");
+
                 break;
 
             default:
                 break;
         }
+
+    }
+    public static async Task FileWriteMessages(string report)
+    {
+        using StreamWriter file = new("C:/Users/Vincent/Desktop/AllMessages.txt", append: true);
+
+        await file.WriteLineAsync(report);
     }
 }

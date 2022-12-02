@@ -12,42 +12,15 @@ namespace Energy_MAS
         //1. export each agent info to a file
         //2. evaluate if the calculations are correct
 
-        private int myGeneration, myDemand, myPriceBuyUT, myPriceSellUT, overallEnergy, myMoney, OverallEnergy, _turnsToWait, _turnsWaited, agentsCount;
-        private bool step1, step2, neverMached, check, end = false; //flow control bools
-        private string? Status; // sustainable, buying, selling. Declared after initiation phase
+        private int overallEnergy, _turnsWaited, agentsCount;
+        private bool step1, step2, neverMached, check, step3, step4 = false; //flow control bools
         private int PriceDutch = 23; //(= Max price to Buy from UT) starting price for Dutch Auction 
-        private int myPendingEnergy = 0; //updates on accepted offer (pending energy to be recived), used to make descisions of future offers
         List<string> messages = new List<string>(); //gets all the messages, recives one meassage from each participant with his information
         List<string> buyers = new List<string>(); //filters the buyers from messages list
         List<string> sellers = new List<string>(); //filters the sellers from messages list
-
         int buyBidsCount = 0;
         int sellerBidsCount = 0;
-        /*        Tuple<string, int, int>? buyOffers;
-                Tuple<string, int, int>? sellOffers;
-                struct buyBids
-                {
-                    public string name; 
-                    public int price;
-                    public int amount;
-
-                    public void getId(int name)
-                    {
-                       Console.WriteLine("Name: " + name);
-                    }
-                }
-                struct sellBids
-                {
-                    public string name;
-                    public int price;
-                    public int amount;
-
-                    public void getId(int name)
-                    {
-                        Console.WriteLine("Name: " + name);
-                    }
-
-                }*/
+        bool printOrders = false;
         class BuyBid
         {
             public string? agentName { get; set; }
@@ -55,7 +28,6 @@ namespace Energy_MAS
             public int amount { get; set; }
         }
 
-        List<BuyBid> buyBidsList = new List<BuyBid>();
 
         class SellBid
         {
@@ -64,14 +36,9 @@ namespace Energy_MAS
             public int amount { get; set; }
         }
 
+        List<BuyBid> buyBidsList = new List<BuyBid>();
         List<SellBid> sellBidsList = new List<SellBid>();
 
-        public override void Setup() // initialisation phase
-        {
-
-
-
-        }
 
         public override void ActDefault() //step control, to initiate auction after everyone recived the first broadcast. 
         {
@@ -102,19 +69,41 @@ namespace Energy_MAS
                 }
 
             }
+            if (step3)
+            {
+                _turnsWaited = _turnsWaited + 1;
+                if (_turnsWaited >= 100)
+                {
+                    if (sellBidsList.Count == 0)
+                    {
 
-            /*   if (!step1)
-               {
-                   if (--_turnsToWait <= 0)
-                   {
-                   }
-               }
-               else if (!step2)
-               {
-                   if (--_turnsToWait <= 0)
-                   {
-                   }
-               }*/
+
+                        NoSellersLeft();
+                    }
+                    if (buyBidsList.Count == 0)
+                    {
+
+                        NoBuyersLeft();
+                    }
+
+                    step3 = false;
+                    step4 = true;
+                    _turnsWaited = 0;
+                }
+
+            }
+            if (step4)
+            {
+                _turnsWaited = _turnsWaited + 1;
+                if (_turnsWaited >= 100)
+                {
+                    GenerateReport();
+                    step4 = false;
+                    _turnsWaited = 0;
+
+                }
+
+            }
 
 
         }
@@ -126,7 +115,7 @@ namespace Energy_MAS
             {
                 Console.WriteLine($"\t{message.Format()}");
                 message.Parse(out string action, out string parameters);
-
+                FileWriteMessages("central");
                 switch (action)
                 {
                     case "centralInform":
@@ -138,7 +127,6 @@ namespace Energy_MAS
                     case "priceSell":
                         HandlePriceSell(parameters);
                         break;
-
                     default:
                         break;
                 }
@@ -159,7 +147,7 @@ namespace Energy_MAS
 
             overallEnergy = overallEnergy + (Int32.Parse(agentEnergy));
             agentsCount = agentsCount + 1;
-            Console.WriteLine($" \n CCC: Recived: {agentName}; OverallEnergy:{overallEnergy}, agentsCount: {agentsCount} \n");
+            // Console.WriteLine($" \n CCC: Recived: {agentName}; OverallEnergy:{overallEnergy}, agentsCount: {agentsCount} \n");
 
             if (agentStatus == "buying")
             {
@@ -192,12 +180,12 @@ namespace Energy_MAS
             else
             {
                 buyBidsList.Add(new BuyBid { agentName = buyerName, amount = buyerAmountToBuy, price = buyerPriceToBuy });
+                buyBidsCount = buyBidsCount + 1;
 
             }
 
 
-            buyBidsCount = buyBidsCount + 1;
-            Console.WriteLine($"BuyList: {buyBidsList.Count}; BuyCount: {buyBidsCount}");
+            // Console.WriteLine($"BuyList: {buyBidsList.Count}; BuyCount: {buyBidsCount}");
             _turnsWaited = 0;
             step2 = true;
             //Console.WriteLine($"\n[CENTRAL]: Recived: from:{buyerName}; PriceBuy:{buyerPriceToBuy}; Amount:{buyerAmountToBuy}; \n");
@@ -234,18 +222,13 @@ namespace Energy_MAS
 
 
             sellerBidsCount = sellerBidsCount + 1;
-            Console.WriteLine($"SellList: {sellBidsList.Count}; SellCount:{sellerBidsCount}");
+            // Console.WriteLine($"SellList: {sellBidsList.Count}; SellCount:{sellerBidsCount}");
             _turnsWaited = 0;
             step2 = true;
             // Console.WriteLine($"\n[CENTRAL]: Recived: from:{sellerName}; PriceSell:{sellerPriceToBuy}; Amount:{sellerAmountToBuy}; \n");
 
         }
 
-
-        private void Ended()
-        {
-            Console.WriteLine("Shows over");
-        }
 
         private void SortLists()
         {
@@ -254,26 +237,31 @@ namespace Energy_MAS
             buyBidsList = buyBidsList.OrderByDescending(o => o.price).ToList();
             sellBidsList = sellBidsList.OrderBy(o => o.price).ToList();
 
-
-            foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
+            if (printOrders)
             {
-                Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
-            }
 
-            foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
-            {
-                Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
-            }
 
+                foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
+                {
+                    Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
+                }
+
+                foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
+                {
+                    Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
+                }
+            }
             if (buyBidsList[0].price >= sellBidsList[0].price)
             {
                 neverMached = false;
-                Console.WriteLine($"[MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
+                //Console.WriteLine($"[MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
                 HandleMatches();
             }
             else
             {
                 neverMached = true;
+                // Console.WriteLine($"[NO MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
+
                 noMatch();
             }
 
@@ -282,11 +270,17 @@ namespace Energy_MAS
         }
         private void NoBuyersLeft()
         {
-            Console.WriteLine($"No Buyers LEFT! COUNT:{buyBidsList.Count}, OverallEnergy has to be positive {overallEnergy}");
+            for (int i = 0; i < sellBidsList.Count; i++) // Loop through List with foreach
+            {
+                Send(sellBidsList[i].agentName, "noBuyersLeft");
+            }
         }
         private void NoSellersLeft()
         {
-            Console.WriteLine($"No Sellers LEFT! COUNT:{sellBidsList.Count}, OverallEnergy has to be negative {overallEnergy}");
+            for (int i = 0; i < buyBidsList.Count; i++) // Loop through List with foreach
+            {
+                Send(buyBidsList[i].agentName, "noSellersLeft");
+            }
         }
 
         private void HandleMatches()
@@ -312,23 +306,20 @@ namespace Energy_MAS
 
                     sellBidsList[sellerIndex].amount = sellBidsList[sellerIndex].amount - amountToSend;
 
-                    Console.WriteLine($"{allBuyers} myEnergy:{sellBidsList[sellerIndex].amount}");
-
-                    buyBidsList[buyerIndex].amount = 0;
-
-
-                    Console.WriteLine($"About to remove:{buyBidsList[buyerIndex].agentName}");
+                    //Console.WriteLine($"About to remove:{buyBidsList[buyerIndex].agentName}, Energy {buyBidsList[buyerIndex].amount}, Energy to be sent: {amountToSend}, listSize: {buyBidsList.Count} ");
                     buyBidsList.RemoveAt(buyerIndex);
-                    //Console.WriteLine($"Now next is:{buyBidsList[buyerIndex].agentName}");
 
+                    // Console.WriteLine($"{allBuyers} myEnergy:{sellBidsList[sellerIndex].amount}");
+
+                    //buyBidsList[buyerIndex].amount = 0;
+
+
+                    //Console.WriteLine($"Now next is:{buyBidsList[buyerIndex].agentName}");
                     if (buyBidsList.Count == 0)
                     {
-                        NoBuyersLeft();
-                        return;
-
-
-
+                        break;
                     }
+
                 }
                 else //buyer demand is higher than seller amount
                 {
@@ -338,7 +329,7 @@ namespace Energy_MAS
                     amountToSend = sellBidsList[sellerIndex].amount;
                     sellBidsList[sellerIndex].amount = 0;
                     allBuyers = allBuyers + $"{nameToSend},{priceSend},{amountToSend};";
-                    Console.WriteLine($"{allBuyers} myEnergy:{sellBidsList[sellerIndex].amount}");
+                    // Console.WriteLine($"{allBuyers} myEnergy:{sellBidsList[sellerIndex].amount}");
                     buyBidsList[buyerIndex].amount = buyBidsList[buyerIndex].amount + amountToSend;
 
                     //Console.WriteLine($"About to remove:{buyBidsList[buyerIndex].agentName}");
@@ -350,49 +341,74 @@ namespace Energy_MAS
 
 
 
-            Console.WriteLine($"[SELLER] My energy should be 0 - {sellBidsList[sellerIndex].amount};{sellBidsList[sellerIndex].agentName} Im about to get removed from the list.");
+            // Console.WriteLine($"[SELLER] My energy should be 0 - {sellBidsList[sellerIndex].amount};{sellBidsList[sellerIndex].agentName} Im about to get removed from the list.");
             Send(sellBidsList[sellerIndex].agentName, $"requestSendEnergy {allBuyers}");
-            sellBidsList.RemoveAt(sellerIndex);
-            if (sellBidsList.Count == 0)
+            if (sellBidsList[sellerIndex].amount == 0)
             {
-                NoSellersLeft();
-                return;
+                sellBidsList.RemoveAt(sellerIndex);
 
             }
-            if (buyBidsList.Count == 0)
+            else
             {
-                NoBuyersLeft();
+                Console.WriteLine("******************************GOTIT***************************");
+            }
+
+            if (sellBidsList.Count == 0 || buyBidsList.Count == 0)
+            {
+                //NoSellersLeft();
+                step3 = true;
                 return;
+
             }
 
             if (buyBidsList[0].price >= sellBidsList[0].price)
             {
-                Console.WriteLine($"[MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
+                // Console.WriteLine($"[MATCH]: {buyBidsList[0].price} is >= than {sellBidsList[0].price};");
                 HandleMatches();
             }
             else
             {
                 noMatch();
 
-
-                /*  Console.WriteLine($"[NO MATCH!]");
-              foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
-              {
-                  Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
-                  buyers.Add(buyBidsList.agentName);
-                  //Send(buyBidsList.agentName, $"noMatch, {sellBidsList[0].price}");
-              }
-
-              foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
-              {
-                  Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
-                  sellers.Add(sellBidsList.agentName);
-                  //Send(sellBidsList.agentName, $"noMatch, {buyBidsList[0].price}");
-              }
-              SendToMany(buyers, $"noMatchBuyer {sellBidsList[0].price}");
-              SendToMany(sellers, $"noMatchSeller {buyBidsList[0].price}");
-*/
             }
+
+            /*
+                        if (sellBidsList.Count == 0)
+                        {
+                            NoSellersLeft();
+                            step3 = true;
+                            return;
+
+                        }
+                        if (buyBidsList.Count == 0)
+                        {
+                            NoBuyersLeft();
+                            step3 = true;
+                            return;
+                        }
+            */
+
+
+
+
+            /*  Console.WriteLine($"[NO MATCH!]");
+          foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
+          {
+              Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
+              buyers.Add(buyBidsList.agentName);
+              //Send(buyBidsList.agentName, $"noMatch, {sellBidsList[0].price}");
+          }
+
+          foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
+          {
+              Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
+              sellers.Add(sellBidsList.agentName);
+              //Send(sellBidsList.agentName, $"noMatch, {buyBidsList[0].price}");
+          }
+          SendToMany(buyers, $"noMatchBuyer {sellBidsList[0].price}");
+          SendToMany(sellers, $"noMatchSeller {buyBidsList[0].price}");
+*/
+
         }
 
 
@@ -400,7 +416,7 @@ namespace Energy_MAS
         private void noMatch()
         {
             check = true;
-            Console.WriteLine($"[NO MATCH!]");
+            // Console.WriteLine($"[NO MATCH!]");
 
 
             if (neverMached)
@@ -415,19 +431,17 @@ namespace Energy_MAS
                 sellers.Clear();
                 foreach (BuyBid buyBidsList in buyBidsList) // Loop through List with foreach
                 {
-                    Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
+                    // Console.WriteLine($"[BUY]: {buyBidsList.price}$; Amount:{buyBidsList.amount}; From:{buyBidsList.agentName}; ");
                     buyers.Add(buyBidsList.agentName);
                     //Send(buyBidsList.agentName, $"noMatch, {sellBidsList[0].price}");
                 }
 
                 foreach (SellBid sellBidsList in sellBidsList) // Loop through List with foreach
                 {
-                    Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
+                    // Console.WriteLine($"[SELL]: {sellBidsList.price}$; Amount:{sellBidsList.amount}; From:{sellBidsList.agentName};");
                     sellers.Add(sellBidsList.agentName);
                     //Send(sellBidsList.agentName, $"noMatch, {buyBidsList[0].price}");
                 }
-
-
                 SendToMany(buyers, $"noMatchBuyer {sellBidsList[0].price}");
                 SendToMany(sellers, $"noMatchSeller {buyBidsList[0].price}");
             }
@@ -441,5 +455,20 @@ namespace Energy_MAS
             await file.WriteLineAsync(report);
         }
 
+        public static async Task FileWriteMessages(string report)
+        {
+            using StreamWriter file = new("C:/Users/Vincent/Desktop/AllMessages.txt", append: true);
+
+            await file.WriteLineAsync(report);
+        }
+
+
+        private void GenerateReport()
+        {
+            int messagesCountFile = File.ReadAllLines("C:/Users/Vincent/Desktop/AllMessages.txt").Length;
+            Console.WriteLine($"Total Messages Exchanged: {messagesCountFile}");
+            File.Delete("C:/Users/Vincent/Desktop/AllMessages.txt");
+
+        }
     }
 }

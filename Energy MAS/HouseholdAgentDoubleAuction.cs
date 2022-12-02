@@ -5,10 +5,11 @@
 
 namespace Energy_MAS
 {
+
     public class HouseholdAgentDoubleAuction : Agent
     {
 
-        private int buyPrice, sellPrice, myGeneration, myDemand, agentsCount, myPriceBuyUT, myPriceSellUT, myEnergy, myMoneyEarned, myMoneySpent, OverallEnergy, _turnsToWait;
+        private int buyPrice, _turnsWaited, sellPrice, myGeneration, myDemand, agentsCount, myPriceBuyUT, myPriceSellUT, myEnergy, myMoneyEarned, myMoneySpent, OverallEnergy, _turnsToWait;
         private bool step1, step2, DutchWait = false; //flow control bools
         private string? Status; // sustainable, buying, selling. Declared after initiation phase
         private int PriceDutch = 23; //(= Max price to Buy from UT) starting price for Dutch Auction 
@@ -18,6 +19,9 @@ namespace Energy_MAS
         private double halfPrice = 0;
         private double coefLess = 0.4;
         private double coefMore = 0.6;
+
+
+
         public override void Setup() // initialisation phase
         {
 
@@ -29,16 +33,45 @@ namespace Energy_MAS
 
         public override void ActDefault() //step control, to initiate auction after everyone recived the first broadcast. 
         {
-
-            if (!step1)
+            if (step1)
             {
-                if (--_turnsToWait <= 0)
+                _turnsWaited = _turnsWaited + 1;
+                if (_turnsWaited >= 300)
                 {
+                    if (myEnergy == 0)
+                    {
+                        string report;
+                        if (Status == "buying")
+                        {
+                            report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"-{myMoneySpent}\"}},";
+                            Console.WriteLine(report);
+
+
+                        }
+                        else if (Status == "selling")
+                        {
+                            report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
+                            Console.WriteLine(report);
+
+
+
+                        }
+                        else
+                        {
+                            report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
+                            Console.WriteLine(report);
+
+                        }
+
+                        step1 = false;
+                    }
+
+                    _turnsWaited = 0;
+
                 }
+
             }
-            else if (!step2)
-            {
-            }
+
 
 
         }
@@ -50,19 +83,17 @@ namespace Energy_MAS
             {
                 Console.WriteLine($"\t{message.Format()}");
                 message.Parse(out string action, out string parameters);
+                FileWriteMessages("agent");
 
                 switch (action)
                 {
                     case "inform": //on recived message with "info" tag from EnvironmentAgent
                         HandleInfromation(parameters);
                         break;
-
-
                     case "calculatePriceBuy":
                         CalculatePriceBuy(parameters);
                         Send("central", $"priceBuy [{Name}] {myEnergy} {buyPrice}");
                         break;
-
                     case "calculatePriceSell":
                         CalculatePriceSell(parameters);
                         Send("central", $"priceSell [{Name}] {myEnergy} {sellPrice}");
@@ -74,18 +105,42 @@ namespace Energy_MAS
                         HandleSendEnergy(parameters);
                         break;
                     case "noMatchBuyer":
-                        Console.WriteLine($"[OLD PRICE Buyer {Name}]:{buyPrice}");
+                        // Console.WriteLine($"[OLD PRICE Buyer {Name}]:{buyPrice}");
                         HandleNoMatchBuyer(parameters);
-                        Console.WriteLine($"[NEW PRICE Buyer {Name}]:{buyPrice}");
+                        // Console.WriteLine($"[NEW PRICE Buyer {Name}]:{buyPrice}");
                         Send("central", $"priceBuy [{Name}] {myEnergy} {buyPrice}");
                         break;
                     case "noMatchSeller":
-                        Console.WriteLine($"[OLD PRICE Seller {Name}]:{sellPrice}");
+                        // Console.WriteLine($"[OLD PRICE Seller {Name}]:{sellPrice}");
                         HandleNoMatchSeller(parameters);
-                        Console.WriteLine($"[NEW PRICE Seller {Name}]:{sellPrice}");
+                        // Console.WriteLine($"[NEW PRICE Seller {Name}]:{sellPrice}");
                         Send("central", $"priceSell [{Name}] {myEnergy} {sellPrice}");
                         break;
+                    case "noBuyersLeft":
+                        if (myEnergy > 0)
+                        {
+                            // Console.WriteLine($" \t \t {Name} Before selling to UC, Money: {myMoney}");
 
+                            myMoneyEarned = myMoneyEarned + (myPriceSellUT * (myEnergy));
+                            myEnergy = 0;
+                            Console.WriteLine($" \t \t {Name} Sold to UC, Money: {myMoneyEarned}");
+                            // string report = Name + " My Energy: " + myEnergy + "; Status: " + Status + "; Demand: " + myDemand + "; Generation: " + myGeneration + "; Price to buy from UT: " + myPriceBuyUT + "; Price to sell to UT: " + myPriceSellUT + "; Money:" + myMoney;
+                        }
+                        break;
+                    case "noSellersLeft":
+                        if (myEnergy < 0)
+                        {
+                            Console.WriteLine($" \t \t {Name} Before buying from UC, Money: {myMoneySpent}");
+
+                            myMoneySpent = myMoneySpent + (myPriceBuyUT * Math.Abs(myEnergy));
+                            myEnergy = 0;
+                            Console.WriteLine($" \t \t {Name} Bought from UC, Money: {myMoneySpent}");
+
+                            // string report = Name + " My Energy: " + myEnergy + "; Status: " + Status + "; Demand: " + myDemand + "; Generation: " + myGeneration + "; Price to buy from UT: " + myPriceBuyUT + "; Price to sell to UT: " + myPriceSellUT + "; Money:" + myMoney;
+
+
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -97,7 +152,7 @@ namespace Energy_MAS
         }
         private void HandleNoMatchBuyer(string parameters)
         {
-            Console.WriteLine($"Im {Status} recived NOMATCH with: {parameters}");
+            // Console.WriteLine($"Im {Status} recived NOMATCH with: {parameters}");
 
 
             if (OverallEnergy > 0)// advantage
@@ -134,7 +189,7 @@ namespace Energy_MAS
 
         private void HandleNoMatchSeller(string parameters)
         {
-            Console.WriteLine($"Im {Status} recived NOMATCH with: {parameters}");
+            // Console.WriteLine($"Im {Status} recived NOMATCH with: {parameters}");
 
             if (OverallEnergy > 0)// disadvantage
             {
@@ -178,7 +233,7 @@ namespace Energy_MAS
                 myMoneyEarned = myMoneyEarned + (Int32.Parse(infoSplit[1]) * Int32.Parse(infoSplit[2]));
                 myEnergy = myEnergy - Int32.Parse(infoSplit[2]);
             }
-            Console.WriteLine($"Seller: {Name} SENT  Earned:{myMoneyEarned}, energy:{myEnergy}");
+            // Console.WriteLine($"Seller: {Name} SENT  Earned:{myMoneyEarned}, energy:{myEnergy}");
 
         }
 
@@ -189,7 +244,7 @@ namespace Energy_MAS
             int reciveAmount = Int32.Parse(infoSplit[1]);
             myMoneySpent = myMoneySpent + (recivePrice * reciveAmount);
             myEnergy = myEnergy + reciveAmount;
-            Console.WriteLine($"Buyer: {Name} BOUGHT Spend:{myMoneySpent}, energy:{myEnergy}");
+            //Console.WriteLine($"RECIVED ENERGY Buyer:{Name} Spend:{myMoneySpent}, energy:{myEnergy}");
 
         }
 
@@ -202,7 +257,7 @@ namespace Energy_MAS
             myPriceBuyUT = Int32.Parse(infoSplit[2]);
             myPriceSellUT = Int32.Parse(infoSplit[3]);
             myEnergy = myGeneration - myDemand;
-            if (myEnergy > 0) { Status = "selling"; } else if (myEnergy == 0) { Status = "sustainable"; Stop(); } else { Status = "buying"; }
+            if (myEnergy > 0) { Status = "selling"; } else if (myEnergy == 0) { Status = "sustainable"; } else { Status = "buying"; }
             //  Console.WriteLine($"[{Name}] myEnergy Balance: {myEnergy}; Status: {Status}; \nInfo - Demand: {myDemand}; Generation: {myGeneration}; Price to buy from UT: {myPriceBuyUT}; Price to sell to UT: {myPriceSellUT}; \n");
             if (Status != "sustainable")
             {
@@ -210,6 +265,7 @@ namespace Energy_MAS
 
             }
             _turnsToWait = 100;
+            step1 = true;
         }
 
 
@@ -271,7 +327,7 @@ namespace Energy_MAS
             double aggressivnesCoeficient = 1;
 
 
-            Console.WriteLine($"[{Name}] My price to sell is {sellPrice} Sell to UC: {myPriceSellUT}");
+            // Console.WriteLine($"[{Name}] My price to sell is {sellPrice} Sell to UC: {myPriceSellUT}");
 
             /*
                         string report = $"Seller {Name}; SellUC${myPriceSellUT}; Sell{sellPrice};  Temp${tempSellPrice}; MidPrice${midPriceFormula}; OE:{OverallEnergy}; Agents:{agentsCount}; Coef:{Convert.ToInt32(coeficient)}%";
@@ -294,9 +350,16 @@ namespace Energy_MAS
 
             await file.WriteLineAsync(report);
         }
+        public static async Task FileWriteMessages(string report)
+        {
+            using StreamWriter file = new("C:/Users/Vincent/Desktop/AllMessages.txt", append: true);
+
+            await file.WriteLineAsync(report);
+        }
     }
 }
 
+//May be useful for future development, gave up on the idea, because of the price fluctuation. Can be useful if the ratio Agents/OverallPrice is more not that dyanamic
 /*private int PriceFormula1(double aggressivnesCoeficient, double midPrice)
         {
             double tempPrice = ((double)OverallEnergy / (double)agentsCount);

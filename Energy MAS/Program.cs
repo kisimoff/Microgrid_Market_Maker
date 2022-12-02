@@ -21,6 +21,7 @@ namespace Energy_MAS
     {
         private static void Main(string[] args)
         {
+
             var env = new EnvironmentMas();
 
             var rand = new Random();
@@ -54,6 +55,7 @@ namespace Energy_MAS
                 env.Add(centralAgent, "central");
             }
             env.Start();
+
         }
     }
 }
