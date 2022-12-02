@@ -212,11 +212,10 @@ namespace Energy_MAS
 
                         }
                         break;
+
+
+
                     case "infoReport":
-
-
-
-
                         string[] infoSplit = parameters.Split(" ");
                         int houseHoldCount = Int32.Parse(infoSplit[0]);
                         int buyersCount = Int32.Parse(infoSplit[1]);
