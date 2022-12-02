@@ -19,7 +19,7 @@ namespace Energy_MAS
         private double halfPrice = 0;
         private double coefLess = 0.4;
         private double coefMore = 0.6;
-
+        private bool Once = true;
 
 
         public override void Setup() // initialisation phase
@@ -41,10 +41,12 @@ namespace Energy_MAS
                     if (myEnergy == 0)
                     {
                         string report;
+
                         if (Status == "buying")
                         {
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"-{myMoneySpent}\"}},";
                             Console.WriteLine(report);
+                            FileWriteAllAgentsReport(report);
 
 
                         }
@@ -53,12 +55,14 @@ namespace Energy_MAS
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
                             Console.WriteLine(report);
 
+                            FileWriteAllAgentsReport(report);
 
 
                         }
                         else
                         {
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
+                            FileWriteAllAgentsReport(report);
                             Console.WriteLine(report);
 
                         }
@@ -356,6 +360,14 @@ namespace Energy_MAS
 
             await file.WriteLineAsync(report);
         }
+        public static async Task FileWriteAllAgentsReport(string report)
+        {
+
+
+            using StreamWriter file = new($"C:/Users/Vincent/Desktop/AllAgentsReport.txt", append: true);
+            await file.WriteLineAsync(report);
+        }
+
     }
 }
 
