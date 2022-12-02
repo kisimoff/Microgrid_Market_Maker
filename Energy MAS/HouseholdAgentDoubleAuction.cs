@@ -22,6 +22,7 @@ namespace Energy_MAS
         private bool Once = true;
         private int Unclean = 0;
         private bool showUnclean = false; //change to true to see the unclean energy bought
+        private string agentNumber = "20";
         public override void Setup() // initialisation phase
         {
 
@@ -33,7 +34,68 @@ namespace Energy_MAS
 
         public override void ActDefault() //step control, to initiate auction after everyone recived the first broadcast. 
         {
+
             if (step1)
+            {
+                _turnsWaited = _turnsWaited + 1;
+                if (_turnsWaited >= 300)
+                {
+                    if (myEnergy == 0)
+                    {
+                        if (Name == "Household:01")
+                        {
+                            int houseHoldCount = 1;
+                            int sellersCount = 0;
+                            int sellersProfit = 0;
+                            int buyersCount = 0;
+                            int buyersSpent = 0;
+                            int uncleanSent = Unclean;
+
+                            if (Status == "buying")
+                            {
+                                houseHoldCount = houseHoldCount + 1;
+                                buyersCount = buyersCount + 1;
+                                buyersSpent = buyersSpent + myMoneySpent;
+                                uncleanSent = uncleanSent + Unclean;
+
+                                Send($"Household:{houseHoldCount:D2}", $"infoReport {houseHoldCount} {buyersCount} {buyersSpent} {sellersCount} {sellersProfit} {uncleanSent} {OverallEnergy}");
+                                step1 = false;
+                                _turnsWaited = 0;
+                                Console.WriteLine($"\n[Report Agent]: {Name}: Role: Buyer; Money:-{myMoneySpent};\n");
+
+                            }
+                            else if (Status == "selling")
+                            {
+                                houseHoldCount = houseHoldCount + 1;
+                                sellersCount = sellersCount + 1;
+                                sellersProfit = sellersProfit + myMoneyEarned;
+                                Send($"Household:{houseHoldCount:D2}", $"infoReport {houseHoldCount} {buyersCount} {buyersSpent} {sellersCount} {sellersProfit} {uncleanSent} {OverallEnergy}");
+                                step1 = false;
+                                _turnsWaited = 0;
+                                Console.WriteLine($"\n[Report Agent]: {Name}: Role: Seller; Money:{myMoneyEarned};\n");
+
+                            }
+                            else
+                            {
+                                houseHoldCount = houseHoldCount + 1;
+
+                                Send($"Household:{houseHoldCount:D2}", $"infoReport {houseHoldCount} {buyersCount} {buyersSpent} {sellersCount} {sellersProfit} {uncleanSent} {OverallEnergy}");
+                                step1 = false;
+                                _turnsWaited = 0;
+                                Console.WriteLine($"\n[Report Agent]: {Name}: Role: Sustainable; Money:0;\n");
+
+                            }
+
+                        }
+
+                    }
+                    _turnsWaited = 0;
+                }
+            }
+
+
+
+            if (step2)
             {
                 _turnsWaited = _turnsWaited + 1;
                 if (_turnsWaited >= 300)
@@ -47,13 +109,9 @@ namespace Energy_MAS
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"-{myMoneySpent}\"}},";
                             Console.WriteLine(report);
 
-                            if (Unclean != 0 && showUnclean)
-                            {
-                                Console.WriteLine($"[{Name}] Unclean Energy Bought: {Math.Abs(Unclean)}; Overall Energy in the System: {OverallEnergy}");
-                            }
-                            else
 
-                                FileWriteAllAgentsReport(report);
+
+                            // FileWriteAllAgentsReport(report);
                             step1 = false;
 
                         }
@@ -61,16 +119,18 @@ namespace Energy_MAS
                         {
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
                             Console.WriteLine(report);
-                            FileWriteAllAgentsReport(report);
+                            // FileWriteAllAgentsReport(report);
                             step1 = false;
+
 
                         }
                         else
                         {
                             report = $"{{\"name\": \"{Name}\", \"status\": \"{Status}\", \"money\": \"{myMoneyEarned}\"}},";
-                            FileWriteAllAgentsReport(report);
+                            // FileWriteAllAgentsReport(report);
                             Console.WriteLine(report);
                             step1 = false;
+
 
                         }
 
@@ -150,6 +210,94 @@ namespace Energy_MAS
                             // string report = Name + " My Energy: " + myEnergy + "; Status: " + Status + "; Demand: " + myDemand + "; Generation: " + myGeneration + "; Price to buy from UT: " + myPriceBuyUT + "; Price to sell to UT: " + myPriceSellUT + "; Money:" + myMoney;
 
 
+                        }
+                        break;
+                    case "infoReport":
+
+
+
+
+                        string[] infoSplit = parameters.Split(" ");
+                        int houseHoldCount = Int32.Parse(infoSplit[0]);
+                        int buyersCount = Int32.Parse(infoSplit[1]);
+                        int buyersSpent = Int32.Parse(infoSplit[2]);
+                        int sellersCount = Int32.Parse(infoSplit[3]);
+                        int sellersProfit = Int32.Parse(infoSplit[4]);
+                        int uncleanSent = Int32.Parse(infoSplit[5]);
+                        int OverallEnergyCheck = Int32.Parse(infoSplit[6]);
+
+                        if (Name == $"Household:{agentNumber}") //20
+                        {
+                            if (Status == "buying")
+                            {
+                                buyersCount = buyersCount + 1;
+                                buyersSpent = buyersSpent + myMoneySpent;
+                                uncleanSent = uncleanSent + Unclean;
+                                OverallEnergyCheck = OverallEnergy;
+                                Console.WriteLine($"\n[Report Agent]: {Name}: Role: Buyer; Money:-{myMoneySpent};\n");
+
+
+                            }
+                            if (Status == "selling")
+                            {
+                                sellersCount = sellersCount + 1;
+                                sellersProfit = sellersProfit + myMoneyEarned;
+                                OverallEnergyCheck = OverallEnergy;
+                                Console.WriteLine($"\n[Report Agent]: {Name}: Role: Seller; Money:{myMoneyEarned};\n");
+
+
+                            }
+                            if (Status == "sustainable")
+                            {
+                                Console.WriteLine($"\n[Report Agent]: {Name}: Role: Sustainable; Money:0;\n");
+
+                            }
+
+                            double averageBuyerSpend = buyersSpent / buyersCount;
+                            double averageSellerEarned = sellersProfit / sellersCount;
+
+
+
+                            string report = $"{{\"Session\": \"{DateTime.Now.ToString("yyyyMMddHHmmssfff")}\", \"average buyer money\": \"-{averageBuyerSpend}\", \"average seller money\": \"{averageSellerEarned}\", \"overall energy\": \"{OverallEnergyCheck}\", \"unclean energy bought\": \"{Math.Abs(uncleanSent)}\"  }},";
+                            FileWriteSingleLineReport(report);
+
+                            Console.WriteLine($"[Report Summary]: Average Buyer Money: -{averageBuyerSpend}; Average Seller Money: {averageSellerEarned}; Overall Energy: {OverallEnergyCheck}; Unclean Energy Bought: {Math.Abs(uncleanSent)};");
+
+                            return;
+
+                        }
+
+                        if (Status == "buying")
+                        {
+                            houseHoldCount = houseHoldCount + 1;
+                            buyersCount = buyersCount + 1;
+                            buyersSpent = buyersSpent + myMoneySpent;
+                            uncleanSent = uncleanSent + Unclean;
+                            OverallEnergyCheck = OverallEnergy;
+
+                            Send($"Household:{houseHoldCount:D2}", $"infoReport {houseHoldCount} {buyersCount} {buyersSpent} {sellersCount} {sellersProfit} {uncleanSent} {OverallEnergyCheck}");
+                            Console.WriteLine($"\n[Report Agent]: {Name}: Role: Buyer; Money:-{myMoneySpent};\n");
+
+                            break;
+                        }
+                        if (Status == "selling")
+                        {
+                            houseHoldCount = houseHoldCount + 1;
+                            sellersCount = sellersCount + 1;
+                            sellersProfit = sellersProfit + myMoneyEarned;
+                            OverallEnergyCheck = OverallEnergy;
+
+                            Send($"Household:{houseHoldCount:D2}", $"infoReport {houseHoldCount} {buyersCount} {buyersSpent} {sellersCount} {sellersProfit} {uncleanSent} {OverallEnergyCheck}");
+                            Console.WriteLine($"\n[Report Agent]: {Name}: Role: Seller; Money:{myMoneyEarned};\n");
+
+                            break;
+                        }
+                        else
+                        {
+                            houseHoldCount = houseHoldCount + 1;
+                            Send($"Household:{houseHoldCount:D2}", $"infoReport {houseHoldCount} {buyersCount} {buyersSpent} {sellersCount} {sellersProfit} {uncleanSent} {OverallEnergyCheck}");
+                            Console.WriteLine($"\n[Report Agent]: {Name}: Role: Sustainable; Money:0;\n");
+                            break;
                         }
                         break;
                     default:
@@ -277,6 +425,8 @@ namespace Energy_MAS
             }
             _turnsToWait = 100;
             step1 = true;
+            //step2 = true;
+
         }
 
 
@@ -373,7 +523,12 @@ namespace Energy_MAS
             using StreamWriter file = new($"C:/Users/Vincent/Desktop/AllAgentsReport.txt", append: true);
             await file.WriteLineAsync(report);
         }
+        public static async Task FileWriteSingleLineReport(string report)
+        {
 
+            using StreamWriter file = new($"C:/Users/Vincent/Desktop/SingleLineReport.txt", append: true);
+            await file.WriteLineAsync(report);
+        }
 
 
     }

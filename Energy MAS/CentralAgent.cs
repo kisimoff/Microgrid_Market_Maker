@@ -486,7 +486,7 @@ namespace Energy_MAS
         private void FileCountMessages()
         {
             int messagesCountFile = File.ReadAllLines("C:/Users/Vincent/Desktop/AllMessages.txt").Length;
-            Console.WriteLine($"Total Messages Exchanged: {messagesCountFile}");
+            Console.WriteLine($"\n[Report Messages]: Total Messages Exchanged: {messagesCountFile}");
             File.Delete("C:/Users/Vincent/Desktop/AllMessages.txt");
 
         }
