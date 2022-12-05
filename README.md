@@ -56,7 +56,8 @@ Valid in both auctions:
 # Reports and Experiments
 ### [Report Messages]
 This report is used to count the total amount of messages exchanged by the agents in the system. This does not calculate the messages after the end of the auction which are exchanged for the [Report Summary]. The messages exchanged for report summary are equal to the total amount of Household agents in the system.
-Each message from each agent is appened to a file which lines are then counted. The result is all the messages exchanged in the system, combined.
+Each message from each agent is appened to a file which lines are then counted. The result is all the messages exchanged in the system, combined:
+
 ![image](https://user-images.githubusercontent.com/61486268/205705658-ad1dbb33-178c-4c60-a2e5-7207b056b7c4.png)
 
 ### [Report Agent] and [Report Summary]
@@ -68,7 +69,7 @@ It saves the output in a file in a csv format which can be used to generate grap
 It starts from Household 01 and finished with “agentNumber” which is supplied in the household. Can be used to generate report from agents from 1 to agentNumber. In this case its used to generate report for all the agents. It works as Household 01 sends its information to Household 02. This repeats in sequence until the last agent. For each agend its generating an [Agent Report] which includes essential agent info as role, and money balance:
 ![image](https://user-images.githubusercontent.com/61486268/205705836-e36f1dc9-634d-467e-bb9f-7a245a9e73d3.png)
 
-### Performance and efficiency
+## Performance and efficiency
 The performance of the Double Auction is much better in terms of efficiency simply because there is a Central agent which cuts the messages significantly.
 Average messages for 20 Agents in Dutch auction (fully decentralized) – 1235
 Average messages for 20 Agents in Double auction (central agent) – 174
