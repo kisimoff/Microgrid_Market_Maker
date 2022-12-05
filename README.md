@@ -1,4 +1,4 @@
-# What is this?
+# About
 This is a multi-agent system designed to simulate microgrid energy trading auctions. It can be used for simulations, evaluations of trading/auction strategies, testing of different architecture patterns, finding optimal solution for communcation between agents and etc. Each agent is a microgrid member(agent/household) with a few parameters:
 * Energy Consumption (in kWhs)
 * Energy Generation (in kWhs)
