@@ -5,10 +5,9 @@ This is a multi-agent system designed to simulate microgrid energy trading aucti
 * Price to buy 1kWhs from Utility Company
 * Price to sell 1kWhs to Utility Company
 Each agent has to determine if he is a "seller" or a "buyer" based on his consumption/generation. Each agent also has to come up with a price for buying or selling, based. This can be achived by multiple approaches. The approach used is described in detail below. 
-
-# Design
 The system consists of two auction protocols - Dutch Auction Protocol and Double Auction Protocol. 
-## Auction 1. – Dutch Auction
+
+# Auction 1. – Dutch Auction
 Fully decentralized. Designed to compare against a superior “Double Acution” with a central agent and showcase the inability to scale, at least in the current implementa-tion, because of its significant number of messages exchanged between agets. The price changes and justification of the choice of auction is explained in the “dutchAuction-Offer“.
 The Dutch auctiom model in as an auction in microgrid p2p systems performs the worse than the rest. This partly motivates the choice, simply to showcase how ineffi-cient the Dutch auction is to Double Auction. (Teixeira et al., 2021) One of the few benefits the Dutch auction has is due to its open nature it is not too hard to develop in a fully decentralized p2p system with buyers and sellers. (Fontoura et al., 2005)
 Messages that agents exchange
@@ -41,7 +40,7 @@ Price = Midprice + (Midprice * ( Overallenergy / 100 ));
 As with buyers the price is influenced by the demand – in this case the price to sell is higher when there is less energy in the system and vice versa.
 ### How prices are changed when there is no matches?
 Depending on the overall energy in the system the prices are changed using a coefficient 0.4 for the agents in advantage (sellers when there is less energy or buyers when there is more energy) and 0.6 for agents in disadvantage. This is a decimal value which is kept for each agent and then converted to an int. 0.6 to int is 1 and 0.4 to int is 0 in-crease/decrease. Next round its 1.2 (0.6+0.6) and 0.8 (0.4 + 0.4). The idea is to incre-ment firstly the one in disadvantage, then the one in advantage. The more time there is no match the more advantage the agents with advantage have.
-## Messages that the agents exchange
+### Messages that the agents exchange
 - “calculatePriceBuy” – send to each buyer from central, contains overall energy of the system. Message Info used by the seller to calculate its price for selling
 - “calculatePriceSell” – send to each seller from central, contains overall energy of the system. Message Info used by the seller to calculate its price for selling
 - “requestSendEnergy” – send to a seller from central when his sell price is matched by a buyer. Contains all the buyers that matched the price. The message contains only the amount that has to be send. -
@@ -55,14 +54,10 @@ Valid in both auctions:
 “noSellersLeft” and “noBuyersLeft” terminate the auction and generate – [Agent Re-port], [Messages Report] and [Report Summary]
 
 # Reports and Experiments
-
-
-
 ### [Report Messages]
 This report is used to count the total amount of messages exchanged by the agents in the system. This does not calculate the messages after the end of the auction which are exchanged for the [Report Summary]. The messages exchanged for report summary are equal to the total amount of Household agents in the system.
 Each message from each agent is appened to a file which lines are then counted. The result is all the messages exchanged in the system, combined.
 ![image](https://user-images.githubusercontent.com/61486268/205705658-ad1dbb33-178c-4c60-a2e5-7207b056b7c4.png)
-
 
 ### [Report Agent] and [Report Summary]
 These reports is executed when the auction is over and after the messages report is finished.
@@ -82,10 +77,10 @@ This displays the huge difference in the efficienty of the protocols and approac
 #### Important
 To toggle between dutch auction and double auction change is isDutchAuction bool from seetings.cs file.
 
-#### Conclusion
+## Conclusion
 In real world scenario the system being fully decentralized e.g. lacking a central agent would not be a huge benefit in the most cases. Overall the better computational effi-ciency would arguably more beneficial than not relying on central agent. This becomes apperant when the system scales and the time complexity really demonstrate the poor communication efficiency between the agent.
 
-### References:
+## References:
 AhmadiAhangar, R., Rosin, A., Niaki, A. N., Palu, I., & Korõtko, T. (2019). A review on real-time simulation and analysis methods of microgrids. International Trans-actions on Electrical Energy Systems, 29(11), e12106. https://doi.org/10.1002/2050-7038.12106
 Fontoura, M., Ionescu, M., & Minsky, N. (2005). Decentralized Peer-to-Peer Auctions. Electronic Commerce Research 2005 5:1, 5(1), 7–24. https://doi.org/10.1023/B:ELEC.0000045971.43390.C0
 Teixeira, D., Gomes, L., & Vale, Z. (2021). Single-unit and multi-unit auction frame-work for peer-to-peer transactions. International Journal of Electrical Power & Energy Systems, 133, 107235. https://doi.org/10.1016/J.IJEPES.2021.107235
